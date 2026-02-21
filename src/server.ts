@@ -16,6 +16,7 @@ import UsersRoute from "./routes/user.routes";
 import UploadRoute from "./routes/upload.routes";
 import ToolsRoute from "./routes/tools.routes";
 import AdminToolsRoute from "./routes/admin-tools.routes";
+import AdminToolPagesRoute from "./routes/admin-tool-pages.routes";
 /**
  * Validate environment variables before booting the app
  * Fail fast if something critical is missing
@@ -31,6 +32,7 @@ const routes = [
     new UploadRoute(),
     new ToolsRoute(),
     new AdminToolsRoute(),
+    new AdminToolPagesRoute(),
 ];
 
 /**
