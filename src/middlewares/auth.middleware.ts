@@ -12,7 +12,10 @@ const PUBLIC_PATHS: string[] = [
   "/api/v1/users/register",
   "/api/v1/tools",
   "/api/v1/admin/tools",
-  "/api/v1/admin/tool-pages"
+  "/api/v1/admin/tool-pages",
+  "/api/v1/seo",
+  "/api/v1/seo/static",
+  "/api/v1/page-components",
   // "/api/v1/users/forgot-password",
 ];
 

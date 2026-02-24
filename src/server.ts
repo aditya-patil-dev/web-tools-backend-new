@@ -17,6 +17,10 @@ import UploadRoute from "./routes/upload.routes";
 import ToolsRoute from "./routes/tools.routes";
 import AdminToolsRoute from "./routes/admin-tools.routes";
 import AdminToolPagesRoute from "./routes/admin-tool-pages.routes";
+import SeoRoute from "./routes/seo.routes";
+import SeoRobotsRoute from "./routes/seo-robots.routes";
+import PageComponentsRoute from "./routes/page-components.routes";
+
 /**
  * Validate environment variables before booting the app
  * Fail fast if something critical is missing
@@ -33,6 +37,9 @@ const routes = [
     new ToolsRoute(),
     new AdminToolsRoute(),
     new AdminToolPagesRoute(),
+    new SeoRoute(),
+    new SeoRobotsRoute(),
+    new PageComponentsRoute(),
 ];
 
 /**
