@@ -405,3 +405,10 @@ export class ToolFiltersDto {
   @IsString()
   sort_order?: "asc" | "desc";
 }
+
+export class SpeedTestDto {
+
+  @IsString()
+  url: string;
+
+}

@@ -40,7 +40,10 @@ export const T = {
   FILES: "files",
   TOOLS: "tools",
   TOOL_PAGES: "tool_pages",
-  TOOLs_CATEGORY_PAGES: "tool_pages",
+  TOOLs_CATEGORY_PAGES: "tools_category_pages",
+  SEO_STATIC_PAGES: "seo_static_pages",
+  SEO_ROBOTS_RULES: "seo_robots_rules",
+  PAGE_COMPONENTS: "page_components",
 } as const;
 
 /**
