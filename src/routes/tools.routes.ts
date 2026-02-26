@@ -17,6 +17,15 @@ class ToolsRoute implements Route {
 
         // Tool detail page
         this.router.get(`/:category/:slug`, this.ToolsController.getToolPage);
+
+        // NEW speed test route
+        this.router.post("/speed-test", this.ToolsController.testWebsiteSpeed);
+
+        // TOOL EVENT TRACKING
+        this.router.post(
+            "/events/track",
+            this.ToolsController.trackToolEvent
+        );
     }
 }
 
