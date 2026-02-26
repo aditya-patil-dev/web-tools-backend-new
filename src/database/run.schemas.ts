@@ -12,6 +12,9 @@ import { seed as seedFiles } from "./files.schema";
 import { seed as seedTools } from "./tools.schema";
 import { seed as seedToolPages } from "./tool_pages.schema";
 import { seed as seedToolsCategoryPages } from "./tools_category_pages.schema";
+import { seed as seedSeoStaticPages } from "./seo_static_pages.schema";
+import { seed as seedSeoRobotsRules } from "./seo-robots.schema";
+import { seed as seedPageComponents } from "./page_components.schema";
 
 const run = async () => {
     await createProcedure();
@@ -30,6 +33,9 @@ const run = async () => {
     await seedTools(false);
     await seedToolPages(false);
     await seedToolsCategoryPages(false);
+    await seedSeoStaticPages(false);
+    await seedSeoRobotsRules(false);
+    await seedPageComponents(false);
 
 };
 

@@ -70,6 +70,100 @@ class ToolsController {
             next(error);
         }
     };
+
+    /**
+   * POST /tools/speed-test
+   */
+    public testWebsiteSpeed = async (
+        req: Request,
+        res: Response,
+        next: NextFunction
+    ) => {
+
+        try {
+
+            let { url } = req.body;
+
+            if (!url) {
+                throw new HttpException(400, "URL is required");
+            }
+
+            if (!url.startsWith("http")) {
+                url = `https://${url}`;
+            }
+
+            const data = await this.ToolsService.testWebsiteSpeed(url);
+
+            res.status(200).json({
+                success: true,
+                message: "Speed test completed",
+                data,
+            });
+
+        } catch (error) {
+            next(error);
+        }
+
+    };
+
+    public trackToolEvent = async (
+        req,
+        res,
+        next
+    ) => {
+
+        try {
+
+            const {
+                tool_id,
+                event_type,
+                session_id,
+                ref_tool_id,
+                meta
+            } = req.body;
+
+
+            if (
+                !tool_id ||
+                !event_type ||
+                !session_id
+            ) {
+
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "tool_id, event_type, session_id required"
+                });
+
+            }
+
+
+            await this.ToolsService
+                .trackToolEvent({
+
+                    tool_id,
+                    event_type,
+                    session_id,
+                    ref_tool_id,
+                    meta
+
+                });
+
+
+            res.json({
+                success: true
+            });
+
+        }
+
+        catch (err) {
+
+            next(err);
+
+        }
+
+    };
+
 }
 
 export default ToolsController;
