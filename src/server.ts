@@ -20,6 +20,7 @@ import AdminToolPagesRoute from "./routes/admin-tool-pages.routes";
 import SeoRoute from "./routes/seo.routes";
 import SeoRobotsRoute from "./routes/seo-robots.routes";
 import PageComponentsRoute from "./routes/page-components.routes";
+import LegalPagesRoute from "./routes/legal-pages.routes";
 
 /**
  * Validate environment variables before booting the app
@@ -40,6 +41,7 @@ const routes = [
     new SeoRoute(),
     new SeoRobotsRoute(),
     new PageComponentsRoute(),
+    new LegalPagesRoute(),
 ];
 
 /**

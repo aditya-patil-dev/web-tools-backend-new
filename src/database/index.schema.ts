@@ -44,6 +44,8 @@ export const T = {
   SEO_STATIC_PAGES: "seo_static_pages",
   SEO_ROBOTS_RULES: "seo_robots_rules",
   PAGE_COMPONENTS: "page_components",
+  TOOL_EVENTS: "tool_events",
+  LEGAL_PAGES: "legal_pages",
 } as const;
 
 /**
