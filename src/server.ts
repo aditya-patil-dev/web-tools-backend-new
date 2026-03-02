@@ -21,6 +21,7 @@ import SeoRoute from "./routes/seo.routes";
 import SeoRobotsRoute from "./routes/seo-robots.routes";
 import PageComponentsRoute from "./routes/page-components.routes";
 import LegalPagesRoute from "./routes/legal-pages.routes";
+import ContactRoute from "./routes/contact.routes";
 
 /**
  * Validate environment variables before booting the app
@@ -42,6 +43,7 @@ const routes = [
     new SeoRobotsRoute(),
     new PageComponentsRoute(),
     new LegalPagesRoute(),
+    new ContactRoute(),
 ];
 
 /**

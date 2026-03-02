@@ -46,6 +46,7 @@ export const T = {
   PAGE_COMPONENTS: "page_components",
   TOOL_EVENTS: "tool_events",
   LEGAL_PAGES: "legal_pages",
+  CONTACT_MESSAGES: "contact_messages",
 } as const;
 
 /**

@@ -17,6 +17,7 @@ const PUBLIC_PATHS: string[] = [
   "/api/v1/seo",
   "/api/v1/seo/static",
   "/api/v1/legal-pages",
+  "/api/v1/contact",
   // "/api/v1/users/forgot-password",
 ];
 

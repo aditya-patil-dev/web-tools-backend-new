@@ -17,6 +17,7 @@ import { seed as seedSeoRobotsRules } from "./seo-robots.schema";
 import { seed as seedPageComponents } from "./page_components.schema";
 import { seed as seedToolEvents } from "./tool_events.schema";
 import { seed as seedLegalPages } from "./legal_pages.schema";
+import { seed as seedContactMessages } from "./contact.schema";
 
 const run = async () => {
     await createProcedure();
@@ -40,6 +41,7 @@ const run = async () => {
     await seedPageComponents(false);
     await seedToolEvents(false);
     await seedLegalPages(false);
+    await seedContactMessages(false);
 
 };
 
