@@ -13,7 +13,7 @@ export const seed = async (dropFirst = false) => {
                 table.bigIncrements("id").primary();
 
                 // Storage backend
-                table.enu("provider", ["local", "s3", "gcs"]).notNullable().defaultTo("local");
+                table.enu("provider", ["local", "s3", "gcs", "imagekit"]).notNullable().defaultTo("local");
                 table.string("bucket", 120).nullable();
                 table.text("key").notNullable();
                 table.text("url").notNullable();

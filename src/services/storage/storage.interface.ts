@@ -1,4 +1,4 @@
-export type StorageProviderName = 'local' | 's3' | 'gcs';
+export type StorageProviderName = 'local' | 's3' | 'gcs' | 'imagekit';
 export type FileVisibility = 'public' | 'private';
 
 export interface UploadInput {

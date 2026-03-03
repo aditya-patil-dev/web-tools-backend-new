@@ -3,22 +3,17 @@ import jwt from "jsonwebtoken";
 import HttpException from "../exceptions/HttpException";
 import DB from "../database/index.schema";
 
-/**
- * Add more public endpoints here if needed
- * These routes will bypass JWT auth
- */
 const PUBLIC_PATHS: string[] = [
   "/api/v1/users/login",
   "/api/v1/page-components",
   "/api/v1/users/register",
   "/api/v1/tools",
-  "/api/v1/admin/tools",
-  "/api/v1/admin/tool-pages",
   "/api/v1/seo",
   "/api/v1/seo/static",
   "/api/v1/legal-pages",
   "/api/v1/contact",
-  // "/api/v1/users/forgot-password",
+  "/api/v1/uploads",
+  "/api/v1/settings",
 ];
 
 type AuthTokenPayload = {
@@ -42,22 +37,48 @@ const authMiddleware: RequestHandler = async (req, res, next) => {
       return next();
     }
 
+    /*
+    ====================================================
+    1️⃣ Get Token from Authorization Header
+    ====================================================
+    */
+
+    let token: string | undefined;
+
     const authHeader = req.headers.authorization;
 
-    if (!authHeader) {
+    if (authHeader) {
+      const [scheme, headerToken] = authHeader.split(" ");
+
+      if (scheme === "Bearer" && headerToken && headerToken !== "null") {
+        token = headerToken;
+      }
+    }
+
+    /*
+    ====================================================
+    2️⃣ If not in header, try cookie
+    ====================================================
+    */
+
+    if (!token && req.cookies?.admin_token) {
+      token = req.cookies.admin_token;
+    }
+
+    if (!token) {
       return next(new HttpException(401, "Authentication token missing"));
     }
 
-    const [scheme, token] = authHeader.split(" ");
+    /*
+    ====================================================
+    3️⃣ Verify JWT
+    ====================================================
+    */
 
-    if (scheme !== "Bearer" || !token || token === "null") {
-      return next(new HttpException(401, "Invalid Authorization header"));
-    }
-
-    // 3) Verify JWT
     const secret = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET;
+
     if (!secret) {
-      return next(new HttpException(500, "JWT secret is not configured"));
+      return next(new HttpException(500, "JWT secret not configured"));
     }
 
     const payload = jwt.verify(token, secret) as AuthTokenPayload;
@@ -65,6 +86,12 @@ const authMiddleware: RequestHandler = async (req, res, next) => {
     if (!payload?.sub) {
       return next(new HttpException(401, "Invalid authentication token"));
     }
+
+    /*
+    ====================================================
+    4️⃣ Attach user to request
+    ====================================================
+    */
 
     (req as any).user = {
       id: payload.sub,
