@@ -33,6 +33,8 @@ const authMiddleware: RequestHandler = async (req, res, next) => {
 
     const url = req.originalUrl || req.url;
 
+    console.log("URL:", req.originalUrl);
+
     if (PUBLIC_PATHS.some((p) => url.startsWith(p))) {
       return next();
     }
