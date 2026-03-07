@@ -94,7 +94,7 @@ class ToolsService {
                 "tools.category_slug": categorySlug,
                 "tools.status": "active",
             })
-            .andWhere("tool_pages.status", "active")
+            .andWhere("tool_pages.status", "published")
             .first();
 
 
