@@ -173,7 +173,7 @@ export const REGISTRY: Record<ResourceName, ResourceConfig> = {
         },
 
         enums: {
-            status: ["draft", "published", "archived"],
+            status: ["draft", "active", "archived"],
         },
     },
 

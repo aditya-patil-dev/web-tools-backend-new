@@ -33,7 +33,7 @@ export const seed = async (dropFirst = false) => {
         table.jsonb("schema_markup").nullable();
 
         table
-          .enu("status", ["draft", "published", "archived"])
+          .enu("status", ["draft", "active", "archived"])
           .defaultTo("draft");
 
         table.timestamp("created_at").defaultTo(DB.fn.now());

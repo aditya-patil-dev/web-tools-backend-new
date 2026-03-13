@@ -23,6 +23,7 @@ import PageComponentsRoute from "./routes/page-components.routes";
 import LegalPagesRoute from "./routes/legal-pages.routes";
 import ContactRoute from "./routes/contact.routes";
 import SettingsRoute from "./routes/settings.routes";
+import ImportExportRoute from "./routes/import-export.routes";
 
 
 /**
@@ -47,6 +48,7 @@ const routes = [
     new LegalPagesRoute(),
     new ContactRoute(),
     new SettingsRoute(),
+    new ImportExportRoute(),
 ];
 
 /**
