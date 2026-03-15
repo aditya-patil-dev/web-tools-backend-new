@@ -12,6 +12,9 @@ class ToolsRoute implements Route {
     }
 
     private initializeRoutes() {
+        // All tools listing
+        this.router.get(`/all`, this.ToolsController.getAllTools);
+
         // Listing page (cards)
         this.router.get(`/`, this.ToolsController.getTools);
 
