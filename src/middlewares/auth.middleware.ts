@@ -34,6 +34,11 @@ const PUBLIC_ROUTES: { path: string; methods: string[] }[] = [
 
   // Legal Pages (ONLY PUBLIC GET, NOT ADMIN)
   { path: "/api/v1/legal-pages", methods: ["GET"] },
+
+  // Public tool actions — called by unauthenticated visitors
+  { path: "/api/v1/tools/events/track", methods: ["POST"] },
+  { path: "/api/v1/tools/speed-test", methods: ["POST"] },
+  { path: "/api/v1/tools/og-check", methods: ["POST"] },
 ];
 
 /*
