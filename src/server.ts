@@ -24,7 +24,7 @@ import LegalPagesRoute from "./routes/legal-pages.routes";
 import ContactRoute from "./routes/contact.routes";
 import SettingsRoute from "./routes/settings.routes";
 import ImportExportRoute from "./routes/import-export.routes";
-
+import KeywordRoute from "./routes/keyword.routes";
 
 /**
  * Validate environment variables before booting the app
@@ -49,6 +49,7 @@ const routes = [
     new ContactRoute(),
     new SettingsRoute(),
     new ImportExportRoute(),
+    new KeywordRoute(),
 ];
 
 /**

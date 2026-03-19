@@ -146,6 +146,25 @@ class ToolsController {
       next(err);
     }
   };
+
+  public checkOpenGraph = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        let { url } = req.body;
+
+        if (!url) throw new HttpException(400, "URL is required");
+        if (!url.startsWith("http")) url = `https://${url}`;
+
+        const data = await this.ToolsService.checkOpenGraph(url);
+
+        res.status(200).json({
+            success: true,
+            message: "OG tags fetched successfully",
+            data,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
 }
 
 export default ToolsController;

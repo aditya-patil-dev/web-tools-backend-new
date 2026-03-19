@@ -3,19 +3,6 @@ import jwt from "jsonwebtoken";
 import HttpException from "../exceptions/HttpException";
 import DB from "../database/index.schema";
 
-const PUBLIC_PATHS: string[] = [
-  "/api/v1/users/login",
-  "/api/v1/page-components",
-  "/api/v1/users/register",
-  "/api/v1/tools",
-  "/api/v1/seo",
-  "/api/v1/seo/static",
-  "/api/v1/legal-pages",
-  "/api/v1/contact",
-  "/api/v1/uploads",
-  "/api/v1/settings",
-];
-
 type AuthTokenPayload = {
   sub: number;
   email: string;
@@ -27,21 +14,73 @@ type AuthTokenPayload = {
   exp?: number;
 };
 
+/*
+====================================================
+PUBLIC ROUTES CONFIG (METHOD BASED)
+====================================================
+*/
+
+const PUBLIC_ROUTES: { path: string; methods: string[] }[] = [
+  { path: "/api/v1/users/login", methods: ["POST"] },
+  { path: "/api/v1/users/register", methods: ["POST"] },
+  { path: "/api/v1/page-components", methods: ["GET"] },
+  { path: "/api/v1/tools", methods: ["GET"] },
+  { path: "/api/v1/seo", methods: ["GET"] },
+  { path: "/api/v1/seo/static", methods: ["GET"] },
+  { path: "/api/v1/contact", methods: ["POST"] },
+  { path: "/api/v1/uploads", methods: ["GET"] },
+  { path: "/api/v1/settings", methods: ["GET"] },
+  { path: "/api/v1/keyword", methods: ["GET"] },
+
+  // Legal Pages (ONLY PUBLIC GET, NOT ADMIN)
+  { path: "/api/v1/legal-pages", methods: ["GET"] },
+];
+
+/*
+====================================================
+HELPER: CHECK PUBLIC ROUTE
+====================================================
+*/
+
+const isPublicRoute = (url: string, method: string): boolean => {
+  // ❗ Block admin routes explicitly
+  if (url.startsWith("/api/v1/legal-pages/admin")) {
+    return false;
+  }
+
+  return PUBLIC_ROUTES.some(
+    (route) => url.startsWith(route.path) && route.methods.includes(method),
+  );
+};
+
+/*
+====================================================
+AUTH MIDDLEWARE
+====================================================
+*/
+
 const authMiddleware: RequestHandler = async (req, res, next) => {
   try {
     await DB.raw("SET search_path TO public");
 
     const url = req.originalUrl || req.url;
+    const method = req.method;
 
-    console.log("URL:", req.originalUrl);
+    console.log("URL:", url, "| METHOD:", method);
 
-    if (PUBLIC_PATHS.some((p) => url.startsWith(p))) {
+    /*
+    ====================================================
+    CHECK PUBLIC ROUTE
+    ====================================================
+    */
+
+    if (isPublicRoute(url, method)) {
       return next();
     }
 
     /*
     ====================================================
-    1️⃣ Get Token from Authorization Header
+    GET TOKEN FROM HEADER
     ====================================================
     */
 
@@ -59,7 +98,7 @@ const authMiddleware: RequestHandler = async (req, res, next) => {
 
     /*
     ====================================================
-    2️⃣ If not in header, try cookie
+    FALLBACK TO COOKIE
     ====================================================
     */
 
@@ -73,7 +112,7 @@ const authMiddleware: RequestHandler = async (req, res, next) => {
 
     /*
     ====================================================
-    3️⃣ Verify JWT
+    VERIFY JWT
     ====================================================
     */
 
@@ -91,7 +130,7 @@ const authMiddleware: RequestHandler = async (req, res, next) => {
 
     /*
     ====================================================
-    4️⃣ Attach user to request
+    ATTACH USER TO REQUEST
     ====================================================
     */
 

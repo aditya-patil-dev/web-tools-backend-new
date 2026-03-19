@@ -14,8 +14,6 @@ class AdminToolPagesRoute implements Route {
   }
 
   private initializeRoutes() {
-    // this.router.use(authMiddleware);
-    // this.router.use(roleMiddleware(['admin', 'editor']));
 
     // ============================================
     // TOOL PAGES CRUD

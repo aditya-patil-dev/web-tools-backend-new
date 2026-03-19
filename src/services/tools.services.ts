@@ -41,12 +41,8 @@ class ToolsService {
         ]),
 
       DB("tools_category_pages")
-        .select(
-          "category_slug as slug",
-          "page_title",
-          "page_description",
-        )
-        .where({ status: "active" })
+        .select("category_slug as slug", "page_title", "page_description")
+        .where({ status: "active" }),
     ]);
 
     return { categories, tools };
@@ -191,9 +187,7 @@ class ToolsService {
   private GOOGLE_API =
     "https://www.googleapis.com/pagespeedonline/v5/runPagespeed";
 
-  /**
-   * Call Google PageSpeed API
-   */
+  // DROP-IN REPLACEMENT for the testWebsiteSpeed method
   public async testWebsiteSpeed(url: string) {
     try {
       const response = await axios.get(this.GOOGLE_API, {
@@ -206,12 +200,11 @@ class ToolsService {
       });
 
       const lighthouse = response.data.lighthouseResult;
-
       const audits = lighthouse.audits;
       const categories = lighthouse.categories;
 
+      /* ── Overall score & grade ─────────────────────────── */
       const score = Math.round(categories.performance.score * 100);
-
       const grade =
         score >= 90
           ? "A"
@@ -223,35 +216,86 @@ class ToolsService {
                 ? "D"
                 : "F";
 
+      /* ── Resource sizes ────────────────────────────────── */
       const totalBytes = audits["total-byte-weight"]?.numericValue || 0;
-
       const requests = audits["network-requests"]?.details?.items?.length || 0;
 
+      /* ── Core timing metrics ───────────────────────────── */
       const metrics = {
         loadTime: audits["interactive"]?.numericValue || 0,
-
         domContentLoaded: audits["dom-content-loaded"]?.numericValue || 0,
-
         firstContentfulPaint:
           audits["first-contentful-paint"]?.numericValue || 0,
-
         timeToInteractive: audits["interactive"]?.numericValue || 0,
-
         totalSize: totalBytes / 1024,
-
         requests,
-
         imageSize: this.getResourceSize(audits, "image"),
-
         scriptSize: this.getResourceSize(audits, "script"),
-
         styleSize: this.getResourceSize(audits, "stylesheet"),
-
         score,
-
         grade,
 
+        /* ── Core Web Vitals ─────────────────────────────── */
+        coreWebVitals: {
+          lcp: {
+            value: audits["largest-contentful-paint"]?.numericValue || 0,
+            display: audits["largest-contentful-paint"]?.displayValue || "N/A",
+            score: audits["largest-contentful-paint"]?.score ?? null,
+          },
+          cls: {
+            value: audits["cumulative-layout-shift"]?.numericValue || 0,
+            display: audits["cumulative-layout-shift"]?.displayValue || "N/A",
+            score: audits["cumulative-layout-shift"]?.score ?? null,
+          },
+          tbt: {
+            value: audits["total-blocking-time"]?.numericValue || 0,
+            display: audits["total-blocking-time"]?.displayValue || "N/A",
+            score: audits["total-blocking-time"]?.score ?? null,
+          },
+          fcp: {
+            value: audits["first-contentful-paint"]?.numericValue || 0,
+            display: audits["first-contentful-paint"]?.displayValue || "N/A",
+            score: audits["first-contentful-paint"]?.score ?? null,
+          },
+          speedIndex: {
+            value: audits["speed-index"]?.numericValue || 0,
+            display: audits["speed-index"]?.displayValue || "N/A",
+            score: audits["speed-index"]?.score ?? null,
+          },
+        },
+
+        /* ── Diagnostics ─────────────────────────────────── */
+        diagnostics: {
+          ttfb: {
+            value: audits["server-response-time"]?.numericValue || 0,
+            display: audits["server-response-time"]?.displayValue || "N/A",
+            score: audits["server-response-time"]?.score ?? null,
+          },
+          domSize: {
+            value: audits["dom-size"]?.numericValue || 0,
+            display: audits["dom-size"]?.displayValue || "N/A",
+            score: audits["dom-size"]?.score ?? null,
+          },
+          bootupTime: {
+            value: audits["bootup-time"]?.numericValue || 0,
+            display: audits["bootup-time"]?.displayValue || "N/A",
+            score: audits["bootup-time"]?.score ?? null,
+          },
+          mainThreadWork: {
+            value: audits["mainthread-work-breakdown"]?.numericValue || 0,
+            display: audits["mainthread-work-breakdown"]?.displayValue || "N/A",
+            score: audits["mainthread-work-breakdown"]?.score ?? null,
+          },
+          thirdPartyBytes: {
+            value: audits["third-party-summary"]?.numericValue || 0,
+            display: audits["third-party-summary"]?.displayValue || "N/A",
+            score: audits["third-party-summary"]?.score ?? null,
+          },
+        },
+
+        /* ── Recommendations & passed audits ─────────────── */
         recommendations: this.extractRecommendations(audits),
+        passedAuditsCount: this.countPassedAudits(audits),
       };
 
       return metrics;
@@ -259,58 +303,105 @@ class ToolsService {
       if (error.response?.data?.error?.message) {
         throw new HttpException(400, error.response.data.error.message);
       }
-
       throw new HttpException(500, "Failed to analyze website speed");
     }
   }
 
-  /**
-   * Resource size calculator
-   */
-  private getResourceSize(audits: any, type: string) {
+  // PRIVATE HELPERS — replace existing versions
+  private getResourceSize(audits: any, type: string): number {
     const items = audits["network-requests"]?.details?.items || [];
-
     return (
       items
         .filter((item: any) => item.resourceType === type)
-        .reduce((sum: number, item: any) => sum + item.transferSize, 0) / 1024
+        .reduce((sum: number, item: any) => sum + (item.transferSize || 0), 0) /
+      1024
     );
   }
 
-  /**
-   * Extract recommendations
-   */
   private extractRecommendations(audits: any) {
-    const recommendations = [];
+    const recommendations: Array<{
+      severity: "critical" | "warning" | "info";
+      title: string;
+      description: string;
+      savingsMs?: number;
+      savingsBytes?: number;
+      savingsDisplay?: string;
+    }> = [];
 
-    const importantAudits = [
-      "render-blocking-resources",
-      "unused-css-rules",
-      "unused-javascript",
-      "modern-image-formats",
-      "uses-text-compression",
+    // Audit key → minimum score to include, category tag
+    const targets = [
+      // Critical — direct timing impact
+      { key: "render-blocking-resources", threshold: 0.9 },
+      { key: "server-response-time", threshold: 0.9 },
+      { key: "bootup-time", threshold: 0.9 },
+      { key: "mainthread-work-breakdown", threshold: 0.9 },
+      // Warnings — size / transfer impact
+      { key: "unused-javascript", threshold: 1.0 },
+      { key: "unused-css-rules", threshold: 1.0 },
+      { key: "uses-optimized-images", threshold: 1.0 },
+      { key: "modern-image-formats", threshold: 1.0 },
+      { key: "efficiently-encode-images", threshold: 1.0 },
+      { key: "uses-text-compression", threshold: 1.0 },
+      { key: "uses-long-cache-ttl", threshold: 0.9 },
+      { key: "uses-responsive-images", threshold: 1.0 },
+      // Info — best practice hints
+      { key: "dom-size", threshold: 0.9 },
+      { key: "third-party-summary", threshold: 0.9 },
+      { key: "font-display", threshold: 1.0 },
+      { key: "uses-passive-event-listeners", threshold: 1.0 },
+      { key: "no-document-write", threshold: 1.0 },
+      { key: "uses-http2", threshold: 0.9 },
     ];
 
-    for (const key of importantAudits) {
+    for (const { key, threshold } of targets) {
       const audit = audits[key];
+      if (!audit || audit.score === null || audit.score >= threshold) continue;
 
-      if (audit && audit.score !== 1) {
-        recommendations.push({
-          severity:
-            audit.score < 0.5
-              ? "critical"
-              : audit.score < 0.9
-                ? "warning"
-                : "info",
+      // Severity bucket
+      let severity: "critical" | "warning" | "info";
+      if (audit.score < 0.5) severity = "critical";
+      else if (audit.score < 0.9) severity = "warning";
+      else severity = "info";
 
-          title: audit.title,
+      // Pull savings if available
+      const savingsMs =
+        audit.details?.overallSavingsMs ||
+        (audit.numericValue && key === "server-response-time")
+          ? audit.numericValue
+          : undefined;
+      const savingsBytes = audit.details?.overallSavingsBytes || undefined;
 
-          description: audit.description,
-        });
+      let savingsDisplay: string | undefined;
+      if (savingsMs && savingsMs > 0) {
+        savingsDisplay = `~${(savingsMs / 1000).toFixed(1)}s`;
+      } else if (savingsBytes && savingsBytes > 0) {
+        savingsDisplay =
+          savingsBytes < 1024 * 1024
+            ? `~${(savingsBytes / 1024).toFixed(0)} KB`
+            : `~${(savingsBytes / (1024 * 1024)).toFixed(1)} MB`;
       }
+
+      recommendations.push({
+        severity,
+        title: audit.title || key,
+        description: audit.description || "",
+        ...(savingsMs ? { savingsMs } : {}),
+        ...(savingsBytes ? { savingsBytes } : {}),
+        ...(savingsDisplay ? { savingsDisplay } : {}),
+      });
     }
 
+    // Sort: critical first, then warning, then info
+    const order = { critical: 0, warning: 1, info: 2 };
+    recommendations.sort((a, b) => order[a.severity] - order[b.severity]);
+
     return recommendations;
+  }
+
+  private countPassedAudits(audits: any): number {
+    return Object.values(audits).filter(
+      (a: any) => a?.score !== null && a?.score === 1,
+    ).length;
   }
 
   /*
@@ -536,6 +627,211 @@ class ToolsService {
       .orderBy("hits", "desc")
 
       .limit(limit);
+  }
+
+  public async checkOpenGraph(url: string) {
+    try {
+      const response = await axios.get(url, {
+        timeout: 10000,
+        headers: {
+          "User-Agent": "Mozilla/5.0 (compatible; OGChecker/1.0)",
+          Accept: "text/html",
+        },
+        maxRedirects: 5,
+      });
+
+      const html: string = response.data;
+
+      const getMeta = (property: string): string | null => {
+        const match =
+          html.match(
+            new RegExp(
+              `<meta[^>]+property=["']${property}["'][^>]+content=["']([^"']+)["']`,
+              "i",
+            ),
+          ) ||
+          html.match(
+            new RegExp(
+              `<meta[^>]+content=["']([^"']+)["'][^>]+property=["']${property}["']`,
+              "i",
+            ),
+          );
+        return match ? match[1] : null;
+      };
+
+      const getMetaName = (name: string): string | null => {
+        const match =
+          html.match(
+            new RegExp(
+              `<meta[^>]+name=["']${name}["'][^>]+content=["']([^"']+)["']`,
+              "i",
+            ),
+          ) ||
+          html.match(
+            new RegExp(
+              `<meta[^>]+content=["']([^"']+)["'][^>]+name=["']${name}["']`,
+              "i",
+            ),
+          );
+        return match ? match[1] : null;
+      };
+
+      const getTitleTag = (): string => {
+        const match = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+        return match ? match[1].trim() : "";
+      };
+
+      const getFavicon = (): string => {
+        const match =
+          html.match(
+            /<link[^>]+rel=["'](?:shortcut )?icon["'][^>]+href=["']([^"']+)["']/i,
+          ) ||
+          html.match(
+            /<link[^>]+href=["']([^"']+)["'][^>]+rel=["'](?:shortcut )?icon["']/i,
+          );
+        if (!match) return `${new URL(url).origin}/favicon.ico`;
+        const href = match[1];
+        return href.startsWith("http") ? href : `${new URL(url).origin}${href}`;
+      };
+
+      // Extract all tags
+      const ogTitle = getMeta("og:title");
+      const ogDescription = getMeta("og:description");
+      const ogImage = getMeta("og:image");
+      const ogUrl = getMeta("og:url");
+      const ogType = getMeta("og:type");
+      const ogSiteName = getMeta("og:site_name");
+      const ogLocale = getMeta("og:locale");
+      const twCard = getMetaName("twitter:card");
+      const twTitle = getMetaName("twitter:title");
+      const twDescription = getMetaName("twitter:description");
+      const twImage = getMetaName("twitter:image");
+      const twSite = getMetaName("twitter:site");
+      const metaDesc = getMetaName("description");
+      const titleTag = getTitleTag();
+
+      const tag = (
+        property: string,
+        content: string | null,
+        required = false,
+      ) => {
+        if (!content)
+          return {
+            property,
+            content: "",
+            status: required ? "missing" : "missing",
+          };
+        return { property, content, status: "found" };
+      };
+
+      // Score calculation
+      const requiredTags = [ogTitle, ogDescription, ogImage, ogUrl];
+      const recommendedTags = [
+        ogType,
+        ogSiteName,
+        twCard,
+        twTitle,
+        twDescription,
+      ];
+      const foundRequired = requiredTags.filter(Boolean).length;
+      const foundRecommended = recommendedTags.filter(Boolean).length;
+      const score = Math.round(
+        (foundRequired / 4) * 60 + (foundRecommended / 5) * 40,
+      );
+
+      // Issues, warnings, suggestions
+      const issues: string[] = [];
+      const warnings: string[] = [];
+      const suggestions: string[] = [];
+
+      if (!ogTitle)
+        issues.push("og:title is missing — required for all social shares");
+      if (!ogDescription)
+        issues.push("og:description is missing — required for rich previews");
+      if (!ogImage)
+        issues.push(
+          "og:image is missing — your link will show no image when shared",
+        );
+      if (!ogUrl)
+        issues.push("og:url is missing — canonical URL for the shared page");
+
+      if (!ogType)
+        warnings.push(
+          "og:type not set — defaults to 'website' but should be explicit",
+        );
+      if (!ogSiteName)
+        warnings.push(
+          "og:site_name not set — recommended for brand recognition",
+        );
+      if (!ogLocale)
+        warnings.push("og:locale not set — recommended (e.g. en_US)");
+      if (ogImage && !getMeta("og:image:width"))
+        warnings.push(
+          "og:image dimensions not specified — add og:image:width and og:image:height for faster rendering",
+        );
+      if (ogImage && !getMeta("og:image:alt"))
+        warnings.push("og:image:alt missing — important for accessibility");
+
+      if (!twCard)
+        suggestions.push(
+          "Add twitter:card for better Twitter/X share appearance",
+        );
+      if (!twTitle)
+        suggestions.push("Add twitter:title — fallback to og:title otherwise");
+      if (!twDescription)
+        suggestions.push("Add twitter:description for Twitter/X previews");
+      if (!twImage)
+        suggestions.push(
+          "Add twitter:image for a dedicated Twitter/X card image",
+        );
+      if (!twSite)
+        suggestions.push(
+          "Add twitter:site with your @handle to credit your brand",
+        );
+
+      return {
+        url,
+        metaTitle: titleTag,
+        metaDescription: metaDesc || "",
+        faviconUrl: getFavicon(),
+        score,
+        issues,
+        warnings,
+        suggestions,
+        validationResult: {
+          title: tag("og:title", ogTitle),
+          description: tag("og:description", ogDescription),
+          image: tag("og:image", ogImage),
+          url: tag("og:url", ogUrl),
+          type: tag("og:type", ogType),
+          siteName: tag("og:site_name", ogSiteName),
+          locale: tag("og:locale", ogLocale),
+          twitterCard: tag("twitter:card", twCard),
+          twitterTitle: tag("twitter:title", twTitle),
+          twitterDescription: tag("twitter:description", twDescription),
+          twitterImage: tag("twitter:image", twImage),
+          twitterSite: tag("twitter:site", twSite),
+        },
+      };
+    } catch (error: any) {
+      if (axios.isAxiosError(error)) {
+        if (error.code === "ECONNREFUSED")
+          throw new HttpException(400, "Could not connect to the URL");
+        if (error.code === "ETIMEDOUT")
+          throw new HttpException(
+            400,
+            "Request timed out — site took too long to respond",
+          );
+        if (error.response?.status === 403)
+          throw new HttpException(
+            400,
+            "Site blocked the request (403 Forbidden)",
+          );
+        if (error.response?.status === 404)
+          throw new HttpException(400, "Page not found (404)");
+      }
+      throw new HttpException(500, "Failed to fetch OG tags from the URL");
+    }
   }
 }
 
