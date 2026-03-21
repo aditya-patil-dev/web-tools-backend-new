@@ -172,6 +172,31 @@ class ToolsController {
                 next(error);
             }
         };
+        this.unlockPdf = async (req, res, next) => {
+            try {
+                const file = req.file;
+                const password = req.body.password;
+                if (!file)
+                    throw new HttpException_1.default(400, "PDF file is required");
+                if (!password)
+                    throw new HttpException_1.default(400, "Password is required");
+                const { buffer, fileName } = await this.ToolsService.unlockPdf({
+                    buffer: file.buffer,
+                    originalName: file.originalname,
+                    password,
+                });
+                res.set({
+                    "Content-Type": "application/pdf",
+                    "Content-Disposition": `attachment; filename="${fileName}"`,
+                    "Content-Length": buffer.length.toString(),
+                    "X-File-Name": fileName,
+                });
+                res.send(buffer);
+            }
+            catch (error) {
+                next(error);
+            }
+        };
     }
 }
 exports.default = ToolsController;

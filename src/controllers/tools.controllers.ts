@@ -207,6 +207,37 @@ class ToolsController {
       next(error);
     }
   };
+
+  public unlockPdf = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => {
+    try {
+      const file = (req as any).file as Express.Multer.File | undefined;
+      const password = req.body.password;
+
+      if (!file) throw new HttpException(400, "PDF file is required");
+      if (!password) throw new HttpException(400, "Password is required");
+
+      const { buffer, fileName } = await this.ToolsService.unlockPdf({
+        buffer: file.buffer,
+        originalName: file.originalname,
+        password,
+      });
+
+      res.set({
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${fileName}"`,
+        "Content-Length": buffer.length.toString(),
+        "X-File-Name": fileName,
+      });
+
+      res.send(buffer);
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default ToolsController;

@@ -47,6 +47,13 @@ class ToolsRoute implements Route {
       upload.single("pdf"),
       this.ToolsController.protectPdf,
     );
+
+    // PDF unlock
+    this.router.post(
+      "/unlock-pdf",
+      upload.single("pdf"),
+      this.ToolsController.unlockPdf,
+    );
   }
 }
 

@@ -22,6 +22,12 @@ interface ProtectPdfOptions {
   allowModify: boolean;
 }
 
+interface UnlockPdfOptions {
+    buffer:       Buffer;
+    originalName: string;
+    password:     string;
+}
+
 class ToolsService {
   /**
    * ALL tools across every category
@@ -871,6 +877,64 @@ class ToolsService {
       const fileName = opts.originalName.replace(/\.pdf$/i, "_protected.pdf");
       return { buffer, fileName };
     } finally {
+      try {
+        if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
+      } catch {}
+      try {
+        if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
+      } catch {}
+    }
+  }
+
+  // Inside the ToolsService class:
+  public async unlockPdf(
+    opts: UnlockPdfOptions,
+  ): Promise<{ buffer: Buffer; fileName: string }> {
+    const qpdf = await import("node-qpdf");
+    const fs = await import("fs");
+    const path = await import("path");
+    const os = await import("os");
+
+    const tmpDir = os.tmpdir();
+    const inputPath = path.join(tmpDir, `pdfunlock-in-${Date.now()}.pdf`);
+    const outputPath = path.join(tmpDir, `pdfunlock-out-${Date.now()}.pdf`);
+
+    try {
+      fs.writeFileSync(inputPath, opts.buffer);
+
+      // qpdf.decrypt strips all password protection when correct password provided
+      await qpdf.decrypt(inputPath, opts.password, outputPath);
+
+      const decryptedBuffer = fs.readFileSync(outputPath);
+      const fileName = opts.originalName.replace(/\.pdf$/i, "_unlocked.pdf");
+
+      return { buffer: decryptedBuffer, fileName };
+    } catch (error: any) {
+      const msg = error.message || "";
+
+      // qpdf exits with code 2 for wrong password
+      if (
+        msg.includes("invalid password") ||
+        msg.includes("password") ||
+        msg.includes("exit code 2") ||
+        msg.includes("code 2")
+      ) {
+        throw new HttpException(
+          400,
+          "Incorrect password — please check and try again",
+        );
+      }
+
+      if (msg.includes("not encrypted")) {
+        throw new HttpException(400, "This PDF is not password protected");
+      }
+
+      throw new HttpException(
+        500,
+        "Failed to unlock PDF: " + (error.message || "Unknown error"),
+      );
+    } finally {
+      // Always clean up temp files
       try {
         if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
       } catch {}

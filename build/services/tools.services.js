@@ -615,6 +615,51 @@ class ToolsService {
             catch (_b) { }
         }
     }
+    // Inside the ToolsService class:
+    async unlockPdf(opts) {
+        const qpdf = await Promise.resolve().then(() => __importStar(require("node-qpdf")));
+        const fs = await Promise.resolve().then(() => __importStar(require("fs")));
+        const path = await Promise.resolve().then(() => __importStar(require("path")));
+        const os = await Promise.resolve().then(() => __importStar(require("os")));
+        const tmpDir = os.tmpdir();
+        const inputPath = path.join(tmpDir, `pdfunlock-in-${Date.now()}.pdf`);
+        const outputPath = path.join(tmpDir, `pdfunlock-out-${Date.now()}.pdf`);
+        try {
+            fs.writeFileSync(inputPath, opts.buffer);
+            // qpdf.decrypt strips all password protection when correct password provided
+            await qpdf.decrypt(inputPath, opts.password, outputPath);
+            const decryptedBuffer = fs.readFileSync(outputPath);
+            const fileName = opts.originalName.replace(/\.pdf$/i, "_unlocked.pdf");
+            return { buffer: decryptedBuffer, fileName };
+        }
+        catch (error) {
+            const msg = error.message || "";
+            // qpdf exits with code 2 for wrong password
+            if (msg.includes("invalid password") ||
+                msg.includes("password") ||
+                msg.includes("exit code 2") ||
+                msg.includes("code 2")) {
+                throw new HttpException_1.default(400, "Incorrect password — please check and try again");
+            }
+            if (msg.includes("not encrypted")) {
+                throw new HttpException_1.default(400, "This PDF is not password protected");
+            }
+            throw new HttpException_1.default(500, "Failed to unlock PDF: " + (error.message || "Unknown error"));
+        }
+        finally {
+            // Always clean up temp files
+            try {
+                if (fs.existsSync(inputPath))
+                    fs.unlinkSync(inputPath);
+            }
+            catch (_a) { }
+            try {
+                if (fs.existsSync(outputPath))
+                    fs.unlinkSync(outputPath);
+            }
+            catch (_b) { }
+        }
+    }
 }
 exports.default = ToolsService;
 //# sourceMappingURL=tools.services.js.map

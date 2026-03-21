@@ -39,6 +39,8 @@ class ToolsRoute {
         this.router.post("/og-check", this.ToolsController.checkOpenGraph);
         // PDF protection
         this.router.post("/protect-pdf", upload.single("pdf"), this.ToolsController.protectPdf);
+        // PDF unlock
+        this.router.post("/unlock-pdf", upload.single("pdf"), this.ToolsController.unlockPdf);
     }
 }
 exports.default = ToolsRoute;
