@@ -596,7 +596,6 @@ class ToolsService {
                     print: opts.allowPrint ? "full" : "none",
                     extract: opts.allowCopy ? "y" : "n",
                     modify: opts.allowModify ? "all" : "none",
-                    useAes: "y",
                 },
             });
             const buffer = fs.readFileSync(outputPath);
