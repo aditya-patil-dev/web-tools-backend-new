@@ -1,6 +1,7 @@
 import DB, { T } from "../database/index.schema";
 import axios from "axios";
 import HttpException from "../exceptions/HttpException";
+import * as qpdf from "node-qpdf";
 
 type TrackEventPayload = {
   tool_id: number;
@@ -10,6 +11,16 @@ type TrackEventPayload = {
   user_id?: number | null;
   meta?: any;
 };
+
+interface ProtectPdfOptions {
+  buffer: Buffer;
+  originalName: string;
+  password: string;
+  ownerPassword: string;
+  allowPrint: boolean;
+  allowCopy: boolean;
+  allowModify: boolean;
+}
 
 class ToolsService {
   /**
@@ -831,6 +842,42 @@ class ToolsService {
           throw new HttpException(400, "Page not found (404)");
       }
       throw new HttpException(500, "Failed to fetch OG tags from the URL");
+    }
+  }
+
+  public async protectPdf(opts: ProtectPdfOptions) {
+    const fs = await import("fs");
+    const path = await import("path");
+    const os = await import("os");
+
+    const inputPath = path.join(os.tmpdir(), `in-${Date.now()}.pdf`);
+    const outputPath = path.join(os.tmpdir(), `out-${Date.now()}.pdf`);
+
+    try {
+      fs.writeFileSync(inputPath, opts.buffer);
+
+      await qpdf.encrypt(inputPath, {
+        keyLength: 256,
+        password: opts.password,
+        outputFile: outputPath,
+        restrictions: {
+          print: opts.allowPrint ? "full" : "none",
+          extract: opts.allowCopy ? "y" : "n",
+          modify: opts.allowModify ? "all" : "none",
+          useAes: "y",
+        },
+      });
+
+      const buffer = fs.readFileSync(outputPath);
+      const fileName = opts.originalName.replace(/\.pdf$/i, "_protected.pdf");
+      return { buffer, fileName };
+    } finally {
+      try {
+        if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
+      } catch {}
+      try {
+        if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
+      } catch {}
     }
   }
 }

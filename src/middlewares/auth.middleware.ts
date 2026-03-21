@@ -25,6 +25,7 @@ const PUBLIC_ROUTES: { path: string; methods: string[] }[] = [
   { path: "/api/v1/users/register", methods: ["POST"] },
   { path: "/api/v1/page-components", methods: ["GET"] },
   { path: "/api/v1/tools", methods: ["GET"] },
+  { path: "/api/v1/tools", methods: ["POST"] },
   { path: "/api/v1/seo", methods: ["GET"] },
   { path: "/api/v1/seo/static", methods: ["GET"] },
   { path: "/api/v1/contact", methods: ["POST"] },

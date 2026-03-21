@@ -147,24 +147,66 @@ class ToolsController {
     }
   };
 
-  public checkOpenGraph = async (req: Request, res: Response, next: NextFunction) => {
+  public checkOpenGraph = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => {
     try {
-        let { url } = req.body;
+      let { url } = req.body;
 
-        if (!url) throw new HttpException(400, "URL is required");
-        if (!url.startsWith("http")) url = `https://${url}`;
+      if (!url) throw new HttpException(400, "URL is required");
+      if (!url.startsWith("http")) url = `https://${url}`;
 
-        const data = await this.ToolsService.checkOpenGraph(url);
+      const data = await this.ToolsService.checkOpenGraph(url);
 
-        res.status(200).json({
-            success: true,
-            message: "OG tags fetched successfully",
-            data,
-        });
+      res.status(200).json({
+        success: true,
+        message: "OG tags fetched successfully",
+        data,
+      });
     } catch (error) {
-        next(error);
+      next(error);
     }
-};
+  };
+
+  public protectPdf = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => {
+    try {
+      const file = (req as any).file as Express.Multer.File | undefined;
+      const { password, ownerPassword, allowPrint, allowCopy, allowModify } =
+        req.body;
+
+      if (!file) throw new HttpException(400, "PDF file is required");
+      if (!password) throw new HttpException(400, "Password is required");
+      if (password.length < 6)
+        throw new HttpException(400, "Password must be at least 6 characters");
+
+      const { buffer, fileName } = await this.ToolsService.protectPdf({
+        buffer: file.buffer,
+        originalName: file.originalname,
+        password,
+        ownerPassword: ownerPassword || password,
+        allowPrint: allowPrint === "true",
+        allowCopy: allowCopy === "true",
+        allowModify: allowModify === "true",
+      });
+
+      res.set({
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${fileName}"`,
+        "Content-Length": buffer.length.toString(),
+        "X-File-Name": fileName,
+      });
+
+      res.send(buffer);
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default ToolsController;
