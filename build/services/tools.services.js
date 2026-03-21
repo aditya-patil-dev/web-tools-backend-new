@@ -39,7 +39,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const index_schema_1 = __importStar(require("../database/index.schema"));
 const axios_1 = __importDefault(require("axios"));
 const HttpException_1 = __importDefault(require("../exceptions/HttpException"));
-const qpdf = __importStar(require("node-qpdf"));
 class ToolsService {
     constructor() {
         this.GOOGLE_API = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed";
@@ -584,23 +583,35 @@ class ToolsService {
         const fs = await Promise.resolve().then(() => __importStar(require("fs")));
         const path = await Promise.resolve().then(() => __importStar(require("path")));
         const os = await Promise.resolve().then(() => __importStar(require("os")));
-        const inputPath = path.join(os.tmpdir(), `in-${Date.now()}.pdf`);
-        const outputPath = path.join(os.tmpdir(), `out-${Date.now()}.pdf`);
+        const { execFile } = await Promise.resolve().then(() => __importStar(require("child_process")));
+        const { promisify } = await Promise.resolve().then(() => __importStar(require("util")));
+        const execFileAsync = promisify(execFile);
+        const tmpDir = os.tmpdir();
+        const inputPath = path.join(tmpDir, `pdfprotect-in-${Date.now()}.pdf`);
+        const outputPath = path.join(tmpDir, `pdfprotect-out-${Date.now()}.pdf`);
+        fs.writeFileSync(inputPath, opts.buffer);
         try {
-            fs.writeFileSync(inputPath, opts.buffer);
-            await qpdf.encrypt(inputPath, {
-                keyLength: 256,
-                password: opts.password,
-                outputFile: outputPath,
-                restrictions: {
-                    print: opts.allowPrint ? "full" : "none",
-                    extract: opts.allowCopy ? "y" : "n",
-                    modify: opts.allowModify ? "all" : "none",
-                },
-            });
-            const buffer = fs.readFileSync(outputPath);
+            const args = [
+                "--encrypt",
+                opts.password, // user password
+                opts.ownerPassword, // owner password
+                "256", // AES-256
+                "--", // end of encrypt options
+                ...(opts.allowPrint ? [] : ["--print=none"]),
+                ...(opts.allowCopy ? [] : ["--extract=n"]),
+                ...(opts.allowModify ? [] : ["--modify=none"]),
+                inputPath,
+                outputPath,
+            ];
+            await execFileAsync("qpdf", args);
+            const encryptedBuffer = fs.readFileSync(outputPath);
             const fileName = opts.originalName.replace(/\.pdf$/i, "_protected.pdf");
-            return { buffer, fileName };
+            return { buffer: encryptedBuffer, fileName };
+        }
+        catch (err) {
+            if (err instanceof HttpException_1.default)
+                throw err;
+            throw new HttpException_1.default(500, "Failed to encrypt PDF: " + (err.stderr || err.message));
         }
         finally {
             try {
@@ -615,39 +626,51 @@ class ToolsService {
             catch (_b) { }
         }
     }
-    // Inside the ToolsService class:
     async unlockPdf(opts) {
-        const qpdf = await Promise.resolve().then(() => __importStar(require("node-qpdf")));
         const fs = await Promise.resolve().then(() => __importStar(require("fs")));
         const path = await Promise.resolve().then(() => __importStar(require("path")));
         const os = await Promise.resolve().then(() => __importStar(require("os")));
+        const { execFile } = await Promise.resolve().then(() => __importStar(require("child_process")));
+        const { promisify } = await Promise.resolve().then(() => __importStar(require("util")));
+        const execFileAsync = promisify(execFile);
         const tmpDir = os.tmpdir();
         const inputPath = path.join(tmpDir, `pdfunlock-in-${Date.now()}.pdf`);
         const outputPath = path.join(tmpDir, `pdfunlock-out-${Date.now()}.pdf`);
+        fs.writeFileSync(inputPath, opts.buffer);
         try {
-            fs.writeFileSync(inputPath, opts.buffer);
-            // qpdf.decrypt strips all password protection when correct password provided
-            await qpdf.decrypt(inputPath, opts.password, outputPath);
+            // Call qpdf binary directly — full control over args and exit codes
+            await execFileAsync("qpdf", [
+                `--password=${opts.password}`,
+                "--decrypt",
+                inputPath,
+                outputPath,
+            ]);
+            if (!fs.existsSync(outputPath)) {
+                throw new HttpException_1.default(400, "Decryption failed — output file not created");
+            }
             const decryptedBuffer = fs.readFileSync(outputPath);
             const fileName = opts.originalName.replace(/\.pdf$/i, "_unlocked.pdf");
             return { buffer: decryptedBuffer, fileName };
         }
-        catch (error) {
-            const msg = error.message || "";
-            // qpdf exits with code 2 for wrong password
-            if (msg.includes("invalid password") ||
-                msg.includes("password") ||
-                msg.includes("exit code 2") ||
-                msg.includes("code 2")) {
+        catch (err) {
+            // Re-throw HttpException cleanly
+            if (err instanceof HttpException_1.default)
+                throw err;
+            const msg = (err.message || "").toLowerCase();
+            const stderr = (err.stderr || "").toLowerCase();
+            const combined = msg + " " + stderr;
+            if (combined.includes("invalid password") ||
+                combined.includes("password incorrect") ||
+                combined.includes("exit code 2") ||
+                err.code === 2) {
                 throw new HttpException_1.default(400, "Incorrect password — please check and try again");
             }
-            if (msg.includes("not encrypted")) {
+            if (combined.includes("not encrypted")) {
                 throw new HttpException_1.default(400, "This PDF is not password protected");
             }
-            throw new HttpException_1.default(500, "Failed to unlock PDF: " + (error.message || "Unknown error"));
+            throw new HttpException_1.default(500, "Failed to unlock PDF: " + (err.stderr || err.message));
         }
         finally {
-            // Always clean up temp files
             try {
                 if (fs.existsSync(inputPath))
                     fs.unlinkSync(inputPath);

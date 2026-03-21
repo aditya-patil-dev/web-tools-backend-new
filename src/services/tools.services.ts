@@ -23,9 +23,9 @@ interface ProtectPdfOptions {
 }
 
 interface UnlockPdfOptions {
-    buffer:       Buffer;
-    originalName: string;
-    password:     string;
+  buffer: Buffer;
+  originalName: string;
+  password: string;
 }
 
 class ToolsService {
@@ -851,31 +851,47 @@ class ToolsService {
     }
   }
 
-  public async protectPdf(opts: ProtectPdfOptions) {
+  public async protectPdf(
+    opts: ProtectPdfOptions,
+  ): Promise<{ buffer: Buffer; fileName: string }> {
     const fs = await import("fs");
     const path = await import("path");
     const os = await import("os");
+    const { execFile } = await import("child_process");
+    const { promisify } = await import("util");
+    const execFileAsync = promisify(execFile);
 
-    const inputPath = path.join(os.tmpdir(), `in-${Date.now()}.pdf`);
-    const outputPath = path.join(os.tmpdir(), `out-${Date.now()}.pdf`);
+    const tmpDir = os.tmpdir();
+    const inputPath = path.join(tmpDir, `pdfprotect-in-${Date.now()}.pdf`);
+    const outputPath = path.join(tmpDir, `pdfprotect-out-${Date.now()}.pdf`);
+
+    fs.writeFileSync(inputPath, opts.buffer);
 
     try {
-      fs.writeFileSync(inputPath, opts.buffer);
+      const args = [
+        "--encrypt",
+        opts.password, // user password
+        opts.ownerPassword, // owner password
+        "256", // AES-256
+        "--", // end of encrypt options
+        ...(opts.allowPrint ? [] : ["--print=none"]),
+        ...(opts.allowCopy ? [] : ["--extract=n"]),
+        ...(opts.allowModify ? [] : ["--modify=none"]),
+        inputPath,
+        outputPath,
+      ];
 
-      await qpdf.encrypt(inputPath, {
-        keyLength: 256,
-        password: opts.password,
-        outputFile: outputPath,
-        restrictions: {
-          print: opts.allowPrint ? "full" : "none",
-          extract: opts.allowCopy ? "y" : "n",
-          modify: opts.allowModify ? "all" : "none",
-        },
-      });
+      await execFileAsync("qpdf", args);
 
-      const buffer = fs.readFileSync(outputPath);
+      const encryptedBuffer = fs.readFileSync(outputPath);
       const fileName = opts.originalName.replace(/\.pdf$/i, "_protected.pdf");
-      return { buffer, fileName };
+      return { buffer: encryptedBuffer, fileName };
+    } catch (err: any) {
+      if (err instanceof HttpException) throw err;
+      throw new HttpException(
+        500,
+        "Failed to encrypt PDF: " + (err.stderr || err.message),
+      );
     } finally {
       try {
         if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
@@ -886,38 +902,54 @@ class ToolsService {
     }
   }
 
-  // Inside the ToolsService class:
   public async unlockPdf(
     opts: UnlockPdfOptions,
   ): Promise<{ buffer: Buffer; fileName: string }> {
-    const qpdf = await import("node-qpdf");
     const fs = await import("fs");
     const path = await import("path");
     const os = await import("os");
+    const { execFile } = await import("child_process");
+    const { promisify } = await import("util");
+    const execFileAsync = promisify(execFile);
 
     const tmpDir = os.tmpdir();
     const inputPath = path.join(tmpDir, `pdfunlock-in-${Date.now()}.pdf`);
     const outputPath = path.join(tmpDir, `pdfunlock-out-${Date.now()}.pdf`);
 
-    try {
-      fs.writeFileSync(inputPath, opts.buffer);
+    fs.writeFileSync(inputPath, opts.buffer);
 
-      // qpdf.decrypt strips all password protection when correct password provided
-      await qpdf.decrypt(inputPath, opts.password, outputPath);
+    try {
+      // Call qpdf binary directly — full control over args and exit codes
+      await execFileAsync("qpdf", [
+        `--password=${opts.password}`,
+        "--decrypt",
+        inputPath,
+        outputPath,
+      ]);
+
+      if (!fs.existsSync(outputPath)) {
+        throw new HttpException(
+          400,
+          "Decryption failed — output file not created",
+        );
+      }
 
       const decryptedBuffer = fs.readFileSync(outputPath);
       const fileName = opts.originalName.replace(/\.pdf$/i, "_unlocked.pdf");
-
       return { buffer: decryptedBuffer, fileName };
-    } catch (error: any) {
-      const msg = error.message || "";
+    } catch (err: any) {
+      // Re-throw HttpException cleanly
+      if (err instanceof HttpException) throw err;
 
-      // qpdf exits with code 2 for wrong password
+      const msg = (err.message || "").toLowerCase();
+      const stderr = (err.stderr || "").toLowerCase();
+      const combined = msg + " " + stderr;
+
       if (
-        msg.includes("invalid password") ||
-        msg.includes("password") ||
-        msg.includes("exit code 2") ||
-        msg.includes("code 2")
+        combined.includes("invalid password") ||
+        combined.includes("password incorrect") ||
+        combined.includes("exit code 2") ||
+        err.code === 2
       ) {
         throw new HttpException(
           400,
@@ -925,16 +957,15 @@ class ToolsService {
         );
       }
 
-      if (msg.includes("not encrypted")) {
+      if (combined.includes("not encrypted")) {
         throw new HttpException(400, "This PDF is not password protected");
       }
 
       throw new HttpException(
         500,
-        "Failed to unlock PDF: " + (error.message || "Unknown error"),
+        "Failed to unlock PDF: " + (err.stderr || err.message),
       );
     } finally {
-      // Always clean up temp files
       try {
         if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
       } catch {}
