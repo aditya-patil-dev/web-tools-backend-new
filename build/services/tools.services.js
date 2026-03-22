@@ -42,6 +42,20 @@ const HttpException_1 = __importDefault(require("../exceptions/HttpException"));
 class ToolsService {
     constructor() {
         this.GOOGLE_API = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed";
+        this.TOOL_SELECT_FIELDS = [
+            "id",
+            "title as name",
+            "slug",
+            "short_description as description",
+            "category_slug",
+            "category_slug as category",
+            "tool_type",
+            "badge",
+            "rating",
+            "views",
+            "users_count as usageCount",
+            "tool_url",
+        ];
     }
     /**
      * ALL tools across every category
@@ -682,6 +696,123 @@ class ToolsService {
             }
             catch (_b) { }
         }
+    }
+    // ── Private helper: most-viewed tools excluding given ids ────────
+    async getFallbackTools(excludeIds, limit) {
+        const query = (0, index_schema_1.default)(index_schema_1.T.TOOLS)
+            .select(...this.TOOL_SELECT_FIELDS)
+            .where("status", "active")
+            .orderBy("is_featured", "desc")
+            .orderBy("views", "desc")
+            .limit(limit);
+        if (excludeIds && excludeIds.length > 0) {
+            query.whereNotIn("id", excludeIds);
+        }
+        return query;
+    }
+    // ── Related Tools ────────────────────────────────────────────────
+    async getRelatedToolsBySlug(slug, limit = 6) {
+        const tool = await (0, index_schema_1.default)(index_schema_1.T.TOOLS)
+            .select("id", "category_slug", "tool_type", "tags")
+            .where({ slug, status: "active" })
+            .first();
+        // Tool not found — show globally popular tools as fallback
+        if (!tool)
+            return this.getFallbackTools(null, limit);
+        // Smart match: same category / tool_type / overlapping tags
+        const related = await (0, index_schema_1.default)(index_schema_1.T.TOOLS)
+            .select(...this.TOOL_SELECT_FIELDS)
+            .where("status", "active")
+            .whereNot("id", tool.id)
+            .andWhere((qb) => {
+            qb.where("category_slug", tool.category_slug)
+                .orWhere("tool_type", tool.tool_type)
+                .orWhereRaw("tags && ?::text[]", [tool.tags || []]);
+        })
+            .orderBy("is_featured", "desc")
+            .orderBy("views", "desc")
+            .limit(limit);
+        // Enough results — return as-is
+        if (related.length >= 3)
+            return related;
+        // Not enough — top up with most-viewed tools
+        // (exclude current tool + already found tools)
+        const existingIds = [tool.id, ...related.map((t) => t.id)];
+        const topUp = await this.getFallbackTools(existingIds, limit - related.length);
+        return [...related, ...topUp];
+    }
+    // ── Popular Tools ────────────────────────────────────────────────
+    async getPopularToolsPublic(limit = 8) {
+        // Try event-based popularity first (last 7 days)
+        const popular = await (0, index_schema_1.default)("tool_events as e")
+            .join("tools as t", "t.id", "e.tool_id")
+            .select("t.id", "t.title as name", "t.slug", "t.short_description as description", "t.category_slug", "t.category_slug as category", "t.tool_type", "t.badge", "t.rating", "t.views", "t.users_count as usageCount", "t.tool_url", index_schema_1.default.raw("COUNT(*)::int as runs"))
+            .where("e.event_type", "TOOL_RUN")
+            .where("e.created_at", ">=", index_schema_1.default.raw("now() - interval '7 days'"))
+            .where("t.status", "active")
+            .groupBy("t.id")
+            .orderBy("runs", "desc")
+            .limit(limit);
+        // Enough event data — return it
+        if (popular.length >= 3)
+            return popular;
+        // New site / no recent events — fall back to most viewed
+        return this.getFallbackTools(null, limit);
+    }
+    // ── Also Used Tools ──────────────────────────────────────────────
+    async getAlsoUsedToolsBySlug(slug, limit = 5) {
+        const tool = await (0, index_schema_1.default)(index_schema_1.T.TOOLS)
+            .select("id", "category_slug")
+            .where({ slug, status: "active" })
+            .first();
+        // Tool not found — show globally popular tools
+        if (!tool)
+            return this.getFallbackTools(null, limit);
+        // Find sessions that ran this tool
+        const sessions = await (0, index_schema_1.default)("tool_events")
+            .distinct("session_id")
+            .where({ tool_id: tool.id, event_type: "TOOL_RUN" })
+            .limit(500);
+        const sessionIds = sessions.map((s) => s.session_id);
+        if (sessionIds.length > 0) {
+            // Real co-usage data exists — use it
+            const coUsed = await (0, index_schema_1.default)("tool_events as e")
+                .join("tools as t", "t.id", "e.tool_id")
+                .select("t.id", "t.title as name", "t.slug", "t.short_description as description", "t.category_slug", "t.category_slug as category", "t.tool_type", "t.badge", "t.rating", "t.views", "t.users_count as usageCount", "t.tool_url", index_schema_1.default.raw("COUNT(*)::int as hits"))
+                .whereIn("e.session_id", sessionIds)
+                .whereNot("t.id", tool.id)
+                .where("t.status", "active")
+                .groupBy("t.id")
+                .orderBy("hits", "desc")
+                .limit(limit);
+            if (coUsed.length >= 2)
+                return coUsed;
+            // Some co-usage but not enough — top up with same-category tools
+            const existingIds = [tool.id, ...coUsed.map((t) => t.id)];
+            const topUp = await (0, index_schema_1.default)(index_schema_1.T.TOOLS)
+                .select(...this.TOOL_SELECT_FIELDS)
+                .where("status", "active")
+                .where("category_slug", tool.category_slug)
+                .whereNotIn("id", existingIds)
+                .orderBy("views", "desc")
+                .limit(limit - coUsed.length);
+            return [...coUsed, ...topUp];
+        }
+        // No event data at all (new tool) — show same-category tools as default
+        const sameCategory = await (0, index_schema_1.default)(index_schema_1.T.TOOLS)
+            .select(...this.TOOL_SELECT_FIELDS)
+            .where("status", "active")
+            .where("category_slug", tool.category_slug)
+            .whereNot("id", tool.id)
+            .orderBy("is_featured", "desc")
+            .orderBy("views", "desc")
+            .limit(limit);
+        if (sameCategory.length >= 2)
+            return sameCategory;
+        // Not even enough same-category tools — top up with global popular
+        const existingIds = [tool.id, ...sameCategory.map((t) => t.id)];
+        const topUp = await this.getFallbackTools(existingIds, limit - sameCategory.length);
+        return [...sameCategory, ...topUp];
     }
 }
 exports.default = ToolsService;

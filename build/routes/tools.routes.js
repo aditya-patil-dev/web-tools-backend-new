@@ -41,6 +41,12 @@ class ToolsRoute {
         this.router.post("/protect-pdf", upload.single("pdf"), this.ToolsController.protectPdf);
         // PDF unlock
         this.router.post("/unlock-pdf", upload.single("pdf"), this.ToolsController.unlockPdf);
+        // Related tools
+        this.router.get(`/related/:slug`, this.ToolsController.getRelatedTools);
+        // Popular tools
+        this.router.get(`/popular`, this.ToolsController.getPopularTools);
+        // Also used tools
+        this.router.get(`/also-used/:slug`, this.ToolsController.getAlsoUsedTools);
     }
 }
 exports.default = ToolsRoute;

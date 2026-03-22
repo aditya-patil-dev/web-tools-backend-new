@@ -197,6 +197,54 @@ class ToolsController {
                 next(error);
             }
         };
+        this.getRelatedTools = async (req, res, next) => {
+            try {
+                const { slug } = req.params;
+                const limit = parseInt(req.query.limit) || 6;
+                if (!slug)
+                    throw new HttpException_1.default(400, "Tool slug is required");
+                const tools = await this.ToolsService.getRelatedToolsBySlug(slug, limit);
+                res.status(200).json({
+                    success: true,
+                    message: "Related tools fetched",
+                    data: tools,
+                });
+            }
+            catch (error) {
+                next(error);
+            }
+        };
+        this.getPopularTools = async (req, res, next) => {
+            try {
+                const limit = parseInt(req.query.limit) || 8;
+                const tools = await this.ToolsService.getPopularToolsPublic(limit);
+                res.status(200).json({
+                    success: true,
+                    message: "Popular tools fetched",
+                    data: tools,
+                });
+            }
+            catch (error) {
+                next(error);
+            }
+        };
+        this.getAlsoUsedTools = async (req, res, next) => {
+            try {
+                const { slug } = req.params;
+                const limit = parseInt(req.query.limit) || 5;
+                if (!slug)
+                    throw new HttpException_1.default(400, "Tool slug is required");
+                const tools = await this.ToolsService.getAlsoUsedToolsBySlug(slug, limit);
+                res.status(200).json({
+                    success: true,
+                    message: "Also used tools fetched",
+                    data: tools,
+                });
+            }
+            catch (error) {
+                next(error);
+            }
+        };
     }
 }
 exports.default = ToolsController;

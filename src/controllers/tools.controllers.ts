@@ -238,6 +238,72 @@ class ToolsController {
       next(error);
     }
   };
+
+  public getRelatedTools = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => {
+    try {
+      const { slug } = req.params;
+      const limit = parseInt(req.query.limit as string) || 6;
+
+      if (!slug) throw new HttpException(400, "Tool slug is required");
+
+      const tools = await this.ToolsService.getRelatedToolsBySlug(slug, limit);
+
+      res.status(200).json({
+        success: true,
+        message: "Related tools fetched",
+        data: tools,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public getPopularTools = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 8;
+
+      const tools = await this.ToolsService.getPopularToolsPublic(limit);
+
+      res.status(200).json({
+        success: true,
+        message: "Popular tools fetched",
+        data: tools,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public getAlsoUsedTools = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => {
+    try {
+      const { slug } = req.params;
+      const limit = parseInt(req.query.limit as string) || 5;
+
+      if (!slug) throw new HttpException(400, "Tool slug is required");
+
+      const tools = await this.ToolsService.getAlsoUsedToolsBySlug(slug, limit);
+
+      res.status(200).json({
+        success: true,
+        message: "Also used tools fetched",
+        data: tools,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default ToolsController;
