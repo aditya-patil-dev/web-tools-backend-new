@@ -6,36 +6,36 @@
 export type FieldTransform = "array" | "boolean" | "number" | "json";
 
 export interface ColumnTransforms {
-    [column: string]: FieldTransform;
+  [column: string]: FieldTransform;
 }
 
 export interface ResourceConfig {
-    /** DB table name */
-    table: string;
+  /** DB table name */
+  table: string;
 
-    /** Column used for upsert in "update" mode */
-    uniqueKey: string;
+  /** Column used for upsert in "update" mode */
+  uniqueKey: string;
 
-    /** Columns returned on export (order matters → CSV column order) */
-    columns: string[];
+  /** Columns returned on export (order matters → CSV column order) */
+  columns: string[];
 
-    /**
-     * Columns that are NOT NULL in the schema — must be non-empty on import.
-     * Mirrors the .notNullable() constraints exactly.
-     */
-    required: string[];
+  /**
+   * Columns that are NOT NULL in the schema — must be non-empty on import.
+   * Mirrors the .notNullable() constraints exactly.
+   */
+  required: string[];
 
-    /**
-     * Type coercions applied to incoming CSV strings before DB insert.
-     * Any column not listed here is kept as a plain string (or null if empty).
-     */
-    transforms?: ColumnTransforms;
+  /**
+   * Type coercions applied to incoming CSV strings before DB insert.
+   * Any column not listed here is kept as a plain string (or null if empty).
+   */
+  transforms?: ColumnTransforms;
 
-    /**
-     * Allowed enum values per column.
-     * Validated before insert so bad values are caught with a clear message.
-     */
-    enums?: Record<string, string[]>;
+  /**
+   * Allowed enum values per column.
+   * Validated before insert so bad values are caught with a clear message.
+   */
+  enums?: Record<string, string[]>;
 }
 
 export type ResourceName = "tools" | "tool_categories" | "tool_pages";
@@ -43,140 +43,140 @@ export type ResourceName = "tools" | "tool_categories" | "tool_pages";
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const REGISTRY: Record<ResourceName, ResourceConfig> = {
+  // ══════════════════════════════════════════════════════════════════════════
+  // tools
+  // NOT NULL: title, slug, category_slug, tool_type, tool_url
+  // status  : "active" | "draft" | "archived"   default "draft"
+  // tags    : text[]  (PostgreSQL native array)
+  // ══════════════════════════════════════════════════════════════════════════
+  tools: {
+    table: "tools",
+    uniqueKey: "id",
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // tools
-    // NOT NULL: title, slug, category_slug, tool_type, tool_url
-    // status  : "active" | "draft" | "archived"   default "draft"
-    // tags    : text[]  (PostgreSQL native array)
-    // ══════════════════════════════════════════════════════════════════════════
-    tools: {
-        table: "tools",
-        uniqueKey: "id",
+    columns: [
+      "id",
+      "title",
+      "slug",
+      "category_slug",
+      "tool_type",
+      "short_description",
+      "tool_url",
+      "tags",
+      "status",
+      "badge",
+      "access_level",
+      "daily_limit",
+      "monthly_limit",
+      "is_featured",
+      "sort_order",
+      "rating",
+      "views",
+      "users_count",
+      "created_at",
+      "updated_at",
+    ],
 
-        columns: [
-            "id",
-            "title",
-            "slug",
-            "category_slug",
-            "tool_type",
-            "short_description",
-            "tool_url",
-            "tags",
-            "status",
-            "badge",
-            "access_level",
-            "daily_limit",
-            "monthly_limit",
-            "is_featured",
-            "sort_order",
-            "rating",
-            "views",
-            "users_count",
-            "created_at",
-            "updated_at",
-        ],
+    // Mirrors every .notNullable() column in tools.schema.ts
+    required: ["title", "slug", "category_slug", "tool_type", "tool_url"],
 
-        // Mirrors every .notNullable() column in tools.schema.ts
-        required: ["title", "slug", "category_slug", "tool_type", "tool_url"],
-
-        transforms: {
-            tags: "array",   // "ai,chat" → ["ai","chat"] → stored as text[]
-            is_featured: "boolean",
-            daily_limit: "number",
-            monthly_limit: "number",
-            sort_order: "number",
-            rating: "number",
-            views: "number",
-            users_count: "number",
-        },
-
-        enums: {
-            status: ["active", "draft", "archived"],
-            access_level: ["free", "pro", "premium"],
-        },
+    transforms: {
+      tags: "array", // "ai,chat" → ["ai","chat"] → stored as text[]
+      is_featured: "boolean",
+      daily_limit: "number",
+      monthly_limit: "number",
+      sort_order: "number",
+      rating: "number",
+      views: "number",
+      users_count: "number",
     },
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // tools_category_pages
-    // NOT NULL : category_slug (unique), page_title
-    // status   : "draft" | "published" | "archived"   default "draft"
-    // ══════════════════════════════════════════════════════════════════════════
-    tool_categories: {
-        table: "tools_category_pages",
-        uniqueKey: "id",
+    enums: {
+      status: ["active", "draft", "archived"],
+      access_level: ["free", "pro", "premium"],
+    },
+  },
 
-        columns: [
-            "id",
-            "category_slug",
-            "page_title",
-            "page_description",
-            "page_intro",
-            "meta_title",
-            "meta_description",
-            "meta_keywords",
-            "canonical_url",
-            "noindex",
-            "status",
-            "created_at",
-            "updated_at",
-        ],
+  // ══════════════════════════════════════════════════════════════════════════
+  // tools_category_pages
+  // NOT NULL : category_slug (unique), page_title
+  // status   : "draft" | "published" | "archived"   default "draft"
+  // ══════════════════════════════════════════════════════════════════════════
+  tool_categories: {
+    table: "tools_category_pages",
+    uniqueKey: "id",
 
-        required: ["category_slug", "page_title"],
+    columns: [
+      "id",
+      "category_slug",
+      "page_title",
+      "page_description",
+      "page_intro",
+      "meta_title",
+      "meta_description",
+      "meta_keywords",
+      "canonical_url",
+      "noindex",
+      "status",
+      "created_at",
+      "updated_at",
+    ],
 
-        transforms: {
-            noindex: "boolean",
-        },
+    required: ["category_slug", "page_title"],
 
-        enums: {
-            status: ["draft", "published", "archived"],
-        },
+    transforms: {
+      noindex: "boolean",
+      meta_keywords: "array",
     },
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // tool_pages
-    // NOT NULL : tool_slug, page_title
-    // status   : "draft" | "published" | "archived"   default "draft"
-    // features : jsonb  [{title, description}]
-    // faqs     : jsonb  [{question, answer}]
-    // ══════════════════════════════════════════════════════════════════════════
-    tool_pages: {
-        table: "tool_pages",
-        uniqueKey: "id",
+    enums: {
+      status: ["draft", "published", "archived"],
+    },
+  },
 
-        columns: [
-            "id",
-            "tool_slug",
-            "page_title",
-            "page_intro",
-            "long_content",
-            "features",
-            "faqs",
-            "meta_title",
-            "meta_description",
-            "meta_keywords",
-            "canonical_url",
-            "schema_markup",
-            "noindex",
-            "status",
-            "created_at",
-            "updated_at",
-        ],
+  // ══════════════════════════════════════════════════════════════════════════
+  // tool_pages
+  // NOT NULL : tool_slug, page_title
+  // status   : "draft" | "published" | "archived"   default "draft"
+  // features : jsonb  [{title, description}]
+  // faqs     : jsonb  [{question, answer}]
+  // ══════════════════════════════════════════════════════════════════════════
+  tool_pages: {
+    table: "tool_pages",
+    uniqueKey: "id",
 
-        required: ["tool_slug", "page_title"],
+    columns: [
+      "id",
+      "tool_slug",
+      "page_title",
+      "page_intro",
+      "long_content",
+      "features",
+      "faqs",
+      "meta_title",
+      "meta_description",
+      "meta_keywords",
+      "canonical_url",
+      "schema_markup",
+      "noindex",
+      "status",
+      "created_at",
+      "updated_at",
+    ],
 
-        transforms: {
-            features: "json",
-            faqs: "json",
-            schema_markup: "json",
-            noindex: "boolean",
-        },
+    required: ["tool_slug", "page_title"],
 
-        enums: {
-            status: ["draft", "active", "archived"],
-        },
+    transforms: {
+      features: "json",
+      faqs: "json",
+      schema_markup: "json",
+      noindex: "boolean",
+      meta_keywords: "array",
     },
 
+    enums: {
+      status: ["draft", "active", "archived"],
+    },
+  },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -184,5 +184,5 @@ export const REGISTRY: Record<ResourceName, ResourceConfig> = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function isValidResource(name: string): name is ResourceName {
-    return name in REGISTRY;
+  return name in REGISTRY;
 }

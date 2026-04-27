@@ -253,7 +253,6 @@ class ImportExportService {
   // ══════════════════════════════════════════════════════════════════════════
   // PRIVATE — TRANSFORM (type coercions)
   // ══════════════════════════════════════════════════════════════════════════
-
   private transform(row: any, config: ResourceConfig): Record<string, any> {
     const payload: Record<string, any> = {};
 
@@ -261,59 +260,71 @@ class ImportExportService {
       const raw = row[col];
       const transform = config.transforms?.[col];
 
-      // Treat empty strings as null
-      if (raw === undefined || raw === null || String(raw).trim() === "") {
+      // Treat empty/null as null — but don't stringify objects to check
+      const isEmpty =
+        raw === undefined ||
+        raw === null ||
+        (typeof raw === "string" && raw.trim() === "");
+
+      if (isEmpty) {
         payload[col] = null;
         continue;
       }
 
       payload[col] = transform
         ? this.coerce(raw, transform)
-        : String(raw).trim();
+        : typeof raw === "string"
+          ? raw.trim()
+          : raw;
     }
 
     return payload;
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-
   private coerce(value: any, transform: FieldTransform): any {
-    const str = String(value).trim();
-
     switch (transform) {
-      case "boolean":
+      case "boolean": {
+        const str = String(value).trim().toLowerCase();
         return str === "true" || str === "1" || str === "yes";
+      }
 
-      case "number":
-        const num = Number(str);
+      case "number": {
+        const num = Number(value);
         return isNaN(num) ? null : num;
+      }
 
-      case "array":
-        // Parse to JS string[] first
-        let arr: string[];
+      case "array": {
+        if (Array.isArray(value)) return value;
+        const str = String(value).trim();
         try {
           const parsed = JSON.parse(str);
-          arr = Array.isArray(parsed) ? parsed.map(String) : [str];
-        } catch {
-          arr = str
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean);
-        }
-        // Wrap in DB.raw so Knex sends it as PostgreSQL text[]
-        return DB.raw("?::text[]", [
-          JSON.stringify(arr).replace(/^\[/, "{").replace(/\]$/, "}"),
-        ]);
+          if (Array.isArray(parsed)) return parsed.map(String).filter(Boolean);
+        } catch {}
+        return str
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+      }
 
-      case "json":
+      case "json": {
+        // Already a parsed object/array — stringify it for Knex/pg jsonb columns
+        if (typeof value === "object" && value !== null) {
+          return JSON.stringify(value);
+        }
+        const str = String(value).trim();
+        if (!str || str === "null") return null;
+        // Validate it's actually parseable, then return as string for pg
         try {
-          return JSON.parse(str);
+          JSON.parse(str); // validate only
+          return str; // return the original string — pg accepts JSON strings for jsonb
         } catch {
           return null;
         }
+      }
 
       default:
-        return str;
+        return typeof value === "string" ? value.trim() : value;
     }
   }
 }

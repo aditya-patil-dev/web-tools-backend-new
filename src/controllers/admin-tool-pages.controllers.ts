@@ -61,7 +61,7 @@ class AdminToolPagesController {
         next: NextFunction,
     ): Promise<void> => {
         try {
-            const { slug } = req.params;
+            const slug = req.params.slug as string;
 
             const toolPage = await this.service.getToolPageBySlug(slug);
 
@@ -148,7 +148,7 @@ class AdminToolPagesController {
         next: NextFunction,
     ): Promise<void> => {
         try {
-            const { slug } = req.params;
+            const slug = req.params.slug as string;
             const toolPageData = req.body;
 
             // Check if tool page exists
@@ -179,7 +179,7 @@ class AdminToolPagesController {
         next: NextFunction,
     ): Promise<void> => {
         try {
-            const { slug } = req.params;
+            const slug = req.params.slug as string;
 
             await this.service.deleteToolPage(slug);
 

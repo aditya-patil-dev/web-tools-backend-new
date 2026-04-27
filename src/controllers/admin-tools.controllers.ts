@@ -72,7 +72,7 @@ class AdminToolsController {
     next: NextFunction,
   ): Promise<void> => {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
 
       const tool = await this.service.getToolById(parseInt(id));
 
@@ -193,7 +193,7 @@ class AdminToolsController {
     next: NextFunction,
   ): Promise<void> => {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
 
       await this.service.softDeleteTool(parseInt(id));
 
@@ -216,7 +216,7 @@ class AdminToolsController {
     next: NextFunction,
   ): Promise<void> => {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
 
       await this.service.hardDeleteTool(parseInt(id));
 
@@ -337,7 +337,7 @@ class AdminToolsController {
     next: NextFunction,
   ): Promise<void> => {
     try {
-      const { slug } = req.params;
+      const slug = req.params.slug as string;
 
       const category = await this.service.getCategoryBySlug(slug);
 
@@ -396,7 +396,7 @@ class AdminToolsController {
     next: NextFunction,
   ): Promise<void> => {
     try {
-      const { slug } = req.params;
+      const slug = req.params.slug as string;
 
       // Check if category has tools
       const toolCount = await this.service.getCategoryToolCount(slug);
@@ -432,7 +432,7 @@ class AdminToolsController {
     next: NextFunction,
   ): Promise<void> => {
     try {
-      const { slug } = req.params;
+      const slug = req.params.slug as string;
 
       const exists = await this.service.checkSlugExists(slug);
 
@@ -458,7 +458,7 @@ class AdminToolsController {
     next: NextFunction,
   ): Promise<void> => {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
 
       const analytics = await this.service.getToolAnalytics(parseInt(id));
 
@@ -490,7 +490,7 @@ class AdminToolsController {
     next: NextFunction,
   ): Promise<void> => {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const { new_slug, new_title } = req.body;
 
       if (!new_slug) {
@@ -529,7 +529,7 @@ class AdminToolsController {
     next: NextFunction,
   ): Promise<void> => {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
 
       await this.service.restoreTool(parseInt(id));
 

@@ -17,7 +17,7 @@ class LegalPagesController {
          */
         this.getLegalPageBySlug = async (req, res, next) => {
             try {
-                const { slug } = req.params;
+                const slug = req.params.slug;
                 if (!slug) {
                     throw new HttpException_1.default(400, "Slug is required");
                 }

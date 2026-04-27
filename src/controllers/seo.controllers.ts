@@ -19,7 +19,7 @@ class SeoController {
         next: NextFunction,
     ): Promise<void> => {
         try {
-            const { page_key } = req.params;
+            const page_key = req.params.page_key as string;
 
             if (!page_key) {
                 throw new HttpException(400, "Page key is required");

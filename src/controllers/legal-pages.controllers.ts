@@ -19,7 +19,7 @@ class LegalPagesController {
         next: NextFunction,
     ): Promise<void> => {
         try {
-            const { slug } = req.params;
+            const slug = req.params.slug as string;
 
             if (!slug) {
                 throw new HttpException(400, "Slug is required");

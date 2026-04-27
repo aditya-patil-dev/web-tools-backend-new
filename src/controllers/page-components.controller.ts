@@ -19,7 +19,7 @@ class PageComponentsController {
         next: NextFunction
     ): Promise<void> => {
         try {
-            const { page_key } = req.params;
+            const page_key = req.params.page_key as string;
 
             if (!page_key) {
                 throw new HttpException(400, "Page key is required");
@@ -47,7 +47,8 @@ class PageComponentsController {
         next: NextFunction
     ): Promise<void> => {
         try {
-            const { page_key, component_type } = req.params;
+            const page_key = req.params.page_key as string;
+            const component_type = req.params.component_type as string;
 
             if (!page_key || !component_type) {
                 throw new HttpException(400, "Page key and component type are required");

@@ -63,7 +63,7 @@ class AdminToolsController {
          */
         this.getToolById = async (req, res, next) => {
             try {
-                const { id } = req.params;
+                const id = req.params.id;
                 const tool = await this.service.getToolById(parseInt(id));
                 if (!tool) {
                     throw new HttpException_1.default(404, "Tool not found");
@@ -158,7 +158,7 @@ class AdminToolsController {
          */
         this.deleteTool = async (req, res, next) => {
             try {
-                const { id } = req.params;
+                const id = req.params.id;
                 await this.service.softDeleteTool(parseInt(id));
                 res.status(200).json({
                     success: true,
@@ -175,7 +175,7 @@ class AdminToolsController {
          */
         this.hardDeleteTool = async (req, res, next) => {
             try {
-                const { id } = req.params;
+                const id = req.params.id;
                 await this.service.hardDeleteTool(parseInt(id));
                 res.status(200).json({
                     success: true,
@@ -268,7 +268,7 @@ class AdminToolsController {
          */
         this.getCategoryBySlug = async (req, res, next) => {
             try {
-                const { slug } = req.params;
+                const slug = req.params.slug;
                 const category = await this.service.getCategoryBySlug(slug);
                 if (!category) {
                     throw new HttpException_1.default(404, "Category not found");
@@ -313,7 +313,7 @@ class AdminToolsController {
          */
         this.deleteCategory = async (req, res, next) => {
             try {
-                const { slug } = req.params;
+                const slug = req.params.slug;
                 // Check if category has tools
                 const toolCount = await this.service.getCategoryToolCount(slug);
                 if (toolCount > 0) {
@@ -338,7 +338,7 @@ class AdminToolsController {
          */
         this.checkSlugAvailability = async (req, res, next) => {
             try {
-                const { slug } = req.params;
+                const slug = req.params.slug;
                 const exists = await this.service.checkSlugExists(slug);
                 res.status(200).json({
                     success: true,
@@ -358,7 +358,7 @@ class AdminToolsController {
          */
         this.getToolAnalytics = async (req, res, next) => {
             try {
-                const { id } = req.params;
+                const id = req.params.id;
                 const analytics = await this.service.getToolAnalytics(parseInt(id));
                 if (!analytics) {
                     throw new HttpException_1.default(404, "Tool not found");
@@ -383,7 +383,7 @@ class AdminToolsController {
          */
         this.duplicateTool = async (req, res, next) => {
             try {
-                const { id } = req.params;
+                const id = req.params.id;
                 const { new_slug, new_title } = req.body;
                 if (!new_slug) {
                     throw new HttpException_1.default(400, "New slug is required");
@@ -410,7 +410,7 @@ class AdminToolsController {
          */
         this.restoreTool = async (req, res, next) => {
             try {
-                const { id } = req.params;
+                const id = req.params.id;
                 await this.service.restoreTool(parseInt(id));
                 res.status(200).json({
                     success: true,

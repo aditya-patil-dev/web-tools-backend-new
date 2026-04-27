@@ -1,6 +1,38 @@
 import DB, { T } from "../database/index.schema";
 import axios from "axios";
 import HttpException from "../exceptions/HttpException";
+import sharp from "sharp";
+
+interface AiCompressInput {
+  buffer: Buffer;
+  mimeType: string;
+  originalName: string;
+  size: number;
+}
+
+interface AiCompressOutput {
+  imageBase64: string;
+  mimeType: string;
+  outputFormat: string;
+  aiMessage: string;
+  originalSize: number;
+  compressedSize: number;
+}
+
+type OutputFormat = "jpeg" | "webp" | "png";
+
+interface CompressionStrategy {
+  outputFormat: OutputFormat;
+  quality: number;
+  maxDimension: number | null;
+  aiMessage: string;
+}
+
+const FORMAT_MIME: Record<OutputFormat, string> = {
+  jpeg: "image/jpeg",
+  webp: "image/webp",
+  png: "image/png",
+};
 
 type TrackEventPayload = {
   tool_id: number;
@@ -93,90 +125,6 @@ class ToolsService {
         { column: "sort_order", order: "asc" },
         { column: "created_at", order: "desc" },
       ]);
-  }
-
-  /**
-   * Tool detail page
-   * JOIN tools + tool_pages
-   */
-  public async getToolPage(
-    categorySlug: string,
-    toolSlug: string,
-    sessionId?: string,
-  ) {
-    const tool = await DB("tools")
-      .leftJoin("tool_pages", "tools.slug", "tool_pages.tool_slug")
-      .select(
-        "tools.id",
-        "tools.title",
-        "tools.slug",
-        "tools.category_slug",
-        "tools.tool_type",
-        "tools.tags",
-        "tools.short_description",
-        "tools.badge",
-        "tools.rating",
-        "tools.views",
-        "tools.users_count",
-        "tools.last_used_at",
-        "tools.access_level",
-        "tools.daily_limit",
-        "tools.monthly_limit",
-        "tools.tool_url",
-
-        "tool_pages.page_title",
-        "tool_pages.page_intro",
-        "tool_pages.long_content",
-        "tool_pages.features",
-        "tool_pages.faqs",
-        "tool_pages.meta_title",
-        "tool_pages.meta_description",
-        "tool_pages.meta_keywords",
-        "tool_pages.canonical_url",
-        "tool_pages.schema_markup",
-        "tool_pages.noindex",
-      )
-      .where({
-        "tools.slug": toolSlug,
-        "tools.category_slug": categorySlug,
-        "tools.status": "active",
-      })
-      .andWhere("tool_pages.status", "active")
-      .first();
-
-    if (!tool) return null;
-
-    /*
-        AUTO TRACK PAGE VIEW
-        */
-
-    if (sessionId) {
-      await Promise.all([
-        DB("tools")
-          .where({ id: tool.id })
-          .update({
-            views: DB.raw("views + 1"),
-          }),
-
-        this.trackToolEvent({
-          tool_id: tool.id,
-          event_type: "PAGE_VIEW",
-          session_id: sessionId,
-          meta: { page: "tool_detail" },
-        }),
-      ]);
-    }
-
-    /*
-        GET RECOMMENDATIONS
-        */
-
-    const recommendations = await this.getRecommendations(tool.id);
-
-    return {
-      ...tool,
-      recommendations,
-    };
   }
 
   public async getCategoryPage(categorySlug: string) {
@@ -418,231 +366,6 @@ class ToolsService {
     return Object.values(audits).filter(
       (a: any) => a?.score !== null && a?.score === 1,
     ).length;
-  }
-
-  /*
-  ========================================
-  TRACK EVENT
-  ========================================
-  */
-
-  public async trackToolEvent(payload: TrackEventPayload) {
-    await DB("tool_events").insert({
-      tool_id: payload.tool_id,
-
-      event_type: payload.event_type,
-
-      session_id: payload.session_id,
-
-      ref_tool_id: payload.ref_tool_id || null,
-
-      user_id: payload.user_id || null,
-
-      meta: DB.raw("?::jsonb", [JSON.stringify(payload.meta || {})]),
-    });
-
-    /*
-        TOOL RUN UPDATE
-        */
-
-    if (payload.event_type === "TOOL_RUN") {
-      await DB("tools")
-        .where({
-          id: payload.tool_id,
-        })
-        .update({
-          users_count: DB.raw("users_count + 1"),
-
-          last_used_at: DB.fn.now(),
-        });
-    }
-  }
-
-  /*
-    ========================================
-    RECOMMENDATIONS MASTER
-    ========================================
-    */
-
-  private async getRecommendations(toolId: number) {
-    const [related, popular, alsoUsed] = await Promise.all([
-      this.getRelatedTools(toolId),
-
-      this.getPopularTools(toolId),
-
-      this.getAlsoUsedTools(toolId),
-    ]);
-
-    return {
-      related,
-      popular,
-      alsoUsed,
-    };
-  }
-
-  /*
-    ========================================
-    RELATED TOOLS
-    ========================================
-    */
-
-  private async getRelatedTools(toolId: number, limit = 6) {
-    const base = await DB("tools")
-      .select("category_slug", "tool_type", "tags")
-      .where({ id: toolId })
-      .first();
-
-    if (!base) return [];
-
-    return DB("tools")
-      .select(
-        "id",
-        "title",
-        "slug",
-        "short_description",
-        "category_slug",
-        "tool_type",
-        "badge",
-        "rating",
-        "views",
-        "users_count",
-        "tool_url",
-      )
-
-      .where("status", "active")
-
-      .whereNot("id", toolId)
-
-      .andWhere((qb) => {
-        qb.where("category_slug", base.category_slug)
-          .orWhere("tool_type", base.tool_type)
-          .orWhereRaw("tags && ?::text[]", [base.tags || []]);
-      })
-
-      .orderBy("is_featured", "desc")
-
-      .orderBy("views", "desc")
-
-      .limit(limit);
-  }
-
-  /*
-    ========================================
-    POPULAR TOOLS
-    ========================================
-    */
-
-  private async getPopularTools(toolId: number, limit = 8) {
-    const popular = await DB("tool_events as e")
-      .join("tools as t", "t.id", "e.tool_id")
-
-      .select(
-        "t.id",
-        "t.title",
-        "t.slug",
-        "t.short_description",
-        "t.category_slug",
-        "t.tool_type",
-        "t.badge",
-        "t.rating",
-        "t.views",
-        "t.users_count",
-        "t.tool_url",
-
-        DB.raw("COUNT(*)::int as runs"),
-      )
-
-      .where("e.event_type", "TOOL_RUN")
-
-      .where("e.created_at", ">=", DB.raw("now() - interval '7 days'"))
-
-      .whereNot("t.id", toolId)
-
-      .groupBy("t.id")
-
-      .orderBy("runs", "desc")
-
-      .limit(limit);
-
-    if (popular.length) return popular;
-
-    /*
-        FALLBACK
-        */
-
-    return DB("tools")
-      .select(
-        "id",
-        "title",
-        "slug",
-        "short_description",
-        "category_slug",
-        "tool_type",
-        "badge",
-        "rating",
-        "views",
-        "users_count",
-        "tool_url",
-      )
-
-      .where("status", "active")
-
-      .whereNot("id", toolId)
-
-      .orderBy("views", "desc")
-
-      .limit(limit);
-  }
-
-  /*
-    ========================================
-    ALSO USED
-    ========================================
-    */
-
-  private async getAlsoUsedTools(toolId: number, limit = 6) {
-    const sessions = await DB("tool_events")
-      .distinct("session_id")
-
-      .where({
-        tool_id: toolId,
-        event_type: "TOOL_RUN",
-      })
-
-      .limit(500);
-
-    const ids = sessions.map((s) => s.session_id);
-
-    if (!ids.length) return [];
-
-    return DB("tool_events as e")
-      .join("tools as t", "t.id", "e.tool_id")
-
-      .select(
-        "t.id",
-        "t.title",
-        "t.slug",
-        "t.short_description",
-        "t.category_slug",
-        "t.tool_type",
-        "t.badge",
-        "t.rating",
-        "t.views",
-        "t.users_count",
-        "t.tool_url",
-
-        DB.raw("COUNT(*)::int as hits"),
-      )
-
-      .whereIn("e.session_id", ids)
-
-      .whereNot("t.id", toolId)
-
-      .groupBy("t.id")
-
-      .orderBy("hits", "desc")
-
-      .limit(limit);
   }
 
   public async checkOpenGraph(url: string) {
@@ -1008,157 +731,306 @@ class ToolsService {
     return query;
   }
 
-  // ── Related Tools ────────────────────────────────────────────────
-  public async getRelatedToolsBySlug(slug: string, limit = 6): Promise<any[]> {
+  // ── Public: full tool page with recommendations ──────────────────
+  public async getToolPage(
+    categorySlug: string,
+    slug: string,
+  ): Promise<any | null> {
+    // 1. Fetch the tool row joined with its page content
     const tool = await DB(T.TOOLS)
-      .select("id", "category_slug", "tool_type", "tags")
-      .where({ slug, status: "active" })
+      .leftJoin(T.TOOL_PAGES, `${T.TOOLS}.slug`, `${T.TOOL_PAGES}.tool_slug`)
+      .select(
+        `${T.TOOLS}.id`,
+        `${T.TOOLS}.title`,
+        `${T.TOOLS}.slug`,
+        `${T.TOOLS}.category_slug`,
+        `${T.TOOLS}.tool_type`,
+        `${T.TOOLS}.tags`,
+        `${T.TOOLS}.short_description`,
+        `${T.TOOLS}.badge`,
+        `${T.TOOLS}.rating`,
+        `${T.TOOLS}.views`,
+        `${T.TOOLS}.users_count`,
+        `${T.TOOLS}.access_level`,
+        `${T.TOOLS}.daily_limit`,
+        `${T.TOOLS}.monthly_limit`,
+        `${T.TOOLS}.tool_url`,
+        // tool_pages columns
+        `${T.TOOL_PAGES}.page_title`,
+        `${T.TOOL_PAGES}.page_intro`,
+        `${T.TOOL_PAGES}.long_content`,
+        `${T.TOOL_PAGES}.features`,
+        `${T.TOOL_PAGES}.faqs`,
+        `${T.TOOL_PAGES}.meta_title`,
+        `${T.TOOL_PAGES}.meta_description`,
+        `${T.TOOL_PAGES}.meta_keywords`,
+        `${T.TOOL_PAGES}.canonical_url`,
+        `${T.TOOL_PAGES}.noindex`,
+        `${T.TOOL_PAGES}.schema_markup`,
+      )
+      .where(`${T.TOOLS}.slug`, slug)
+      .where(`${T.TOOLS}.category_slug`, categorySlug)
+      .where(`${T.TOOLS}.status`, "active")
       .first();
 
-    // Tool not found — show globally popular tools as fallback
-    if (!tool) return this.getFallbackTools(null, limit);
+    if (!tool) return null;
 
-    // Smart match: same category / tool_type / overlapping tags
-    const related = await DB(T.TOOLS)
-      .select(...this.TOOL_SELECT_FIELDS)
-      .where("status", "active")
-      .whereNot("id", tool.id)
-      .andWhere((qb) => {
-        qb.where("category_slug", tool.category_slug)
-          .orWhere("tool_type", tool.tool_type)
-          .orWhereRaw("tags && ?::text[]", [tool.tags || []]);
-      })
-      .orderBy("is_featured", "desc")
-      .orderBy("views", "desc")
-      .limit(limit);
+    const toolId = Number(tool.id);
+    const toolTags: string[] = tool.tags || [];
 
-    // Enough results — return as-is
-    if (related.length >= 3) return related;
+    // 2. Build all three recommendations in parallel
+    const [related, popular, alsoUsed] = await Promise.all([
+      this.getRelatedTools(categorySlug, toolId),
+      this.getPopularTools(toolId),
+      this.getAlsoUsedTools(toolId, toolTags),
+    ]);
 
-    // Not enough — top up with most-viewed tools
-    // (exclude current tool + already found tools)
-    const existingIds = [tool.id, ...related.map((t: any) => t.id)];
-    const topUp = await this.getFallbackTools(
-      existingIds,
-      limit - related.length,
+    return {
+      ...tool,
+      features: tool.features || [],
+      faqs: tool.faqs || [],
+      tags: toolTags,
+      meta_keywords: tool.meta_keywords || [],
+      recommendations: {
+        related,
+        popular,
+        alsoUsed,
+      },
+    };
+  }
+
+  // ── Related: same category with daily rotation ───────────────────
+  //
+  // Uses a deterministic daily seed so the list rotates every day
+  // without needing any views or session data. The seed is the
+  // current day-of-year (1-365), so every tool page sees the same
+  // rotation order on a given day (consistent UX) but it changes
+  // daily to surface different tools over time.
+  private async getRelatedTools(
+    categorySlug: string,
+    excludeId: number,
+  ): Promise<any[]> {
+    // Day-of-year as a rotating seed (1–365)
+    const dayOfYear = Math.ceil(
+      (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) /
+        86_400_000,
     );
 
-    return [...related, ...topUp];
+    return DB(T.TOOLS)
+      .select(...this.TOOL_SELECT_FIELDS)
+      .where("category_slug", categorySlug)
+      .where("status", "active")
+      .whereNot("id", excludeId)
+      // Rotate daily: ((id XOR seed) mod large_prime) gives a stable
+      // daily shuffle that's different from the raw id ordering.
+      .orderByRaw(`(id # ?) % 9973`, [dayOfYear])
+      .limit(5);
   }
 
-  // ── Popular Tools ────────────────────────────────────────────────
-  public async getPopularToolsPublic(limit = 8): Promise<any[]> {
-    // Try event-based popularity first (last 7 days)
-    const popular = await DB("tool_events as e")
-      .join("tools as t", "t.id", "e.tool_id")
-      .select(
-        "t.id",
-        "t.title as name",
-        "t.slug",
-        "t.short_description as description",
-        "t.category_slug",
-        "t.category_slug as category",
-        "t.tool_type",
-        "t.badge",
-        "t.rating",
-        "t.views",
-        "t.users_count as usageCount",
-        "t.tool_url",
-        DB.raw("COUNT(*)::int as runs"),
-      )
-      .where("e.event_type", "TOOL_RUN")
-      .where("e.created_at", ">=", DB.raw("now() - interval '7 days'"))
-      .where("t.status", "active")
-      .groupBy("t.id")
-      .orderBy("runs", "desc")
-      .limit(limit);
-
-    // Enough event data — return it
-    if (popular.length >= 3) return popular;
-
-    // New site / no recent events — fall back to most viewed
-    return this.getFallbackTools(null, limit);
+  // ── Popular: admin-curated via is_featured + sort_order ──────────
+  //
+  // Admin marks tools as is_featured=true in the admin panel.
+  // sort_order controls the display sequence.
+  // If fewer than 5 featured tools exist, the remaining slots are
+  // filled by the next tools sorted by sort_order (ascending).
+  private async getPopularTools(excludeId: number): Promise<any[]> {
+    return DB(T.TOOLS)
+      .select(...this.TOOL_SELECT_FIELDS)
+      .where("status", "active")
+      .whereNot("id", excludeId)
+      // Featured tools first, then by admin-defined sort order
+      .orderBy("is_featured", "desc")
+      .orderBy("sort_order", "asc")
+      .limit(5);
   }
 
-  // ── Also Used Tools ──────────────────────────────────────────────
-  public async getAlsoUsedToolsBySlug(slug: string, limit = 5): Promise<any[]> {
-    const tool = await DB(T.TOOLS)
-      .select("id", "category_slug")
-      .where({ slug, status: "active" })
-      .first();
+  // ── Also-used: tag-similarity scoring ────────────────────────────
+  //
+  // Scores every other active tool by the number of tags it shares
+  // with the current tool using Postgres array overlap (&&).
+  // No session data or views needed — pure content-based similarity.
+  //
+  // Falls back to getPopularTools() if the current tool has no tags
+  // or no other tools share any tags.
+  private async getAlsoUsedTools(
+    excludeId: number,
+    currentTags: string[],
+  ): Promise<any[]> {
+    if (currentTags.length > 0) {
+      try {
+        // Count shared tags using Postgres array functions.
+        // array_length(ARRAY(SELECT unnest(a) INTERSECT SELECT unnest(b)), 1)
+        // returns the number of common elements between two text arrays.
+        const similar = await DB(T.TOOLS)
+          .select(
+            ...this.TOOL_SELECT_FIELDS,
+            // Compute tag overlap count as a virtual column
+            DB.raw(
+              `array_length(
+                ARRAY(
+                  SELECT unnest(tags::text[])
+                  INTERSECT
+                  SELECT unnest(?::text[])
+                ), 1
+              ) AS tag_overlap`,
+              [currentTags],
+            ),
+          )
+          .where("status", "active")
+          .whereNot("id", excludeId)
+          // Must share at least one tag
+          .whereRaw(`tags && ?::text[]`, [currentTags])
+          // Highest overlap first; break ties by sort_order then id
+          .orderBy("tag_overlap", "desc")
+          .orderBy("sort_order", "asc")
+          .limit(5);
 
-    // Tool not found — show globally popular tools
-    if (!tool) return this.getFallbackTools(null, limit);
-
-    // Find sessions that ran this tool
-    const sessions = await DB("tool_events")
-      .distinct("session_id")
-      .where({ tool_id: tool.id, event_type: "TOOL_RUN" })
-      .limit(500);
-
-    const sessionIds = sessions.map((s: any) => s.session_id);
-
-    if (sessionIds.length > 0) {
-      // Real co-usage data exists — use it
-      const coUsed = await DB("tool_events as e")
-        .join("tools as t", "t.id", "e.tool_id")
-        .select(
-          "t.id",
-          "t.title as name",
-          "t.slug",
-          "t.short_description as description",
-          "t.category_slug",
-          "t.category_slug as category",
-          "t.tool_type",
-          "t.badge",
-          "t.rating",
-          "t.views",
-          "t.users_count as usageCount",
-          "t.tool_url",
-          DB.raw("COUNT(*)::int as hits"),
-        )
-        .whereIn("e.session_id", sessionIds)
-        .whereNot("t.id", tool.id)
-        .where("t.status", "active")
-        .groupBy("t.id")
-        .orderBy("hits", "desc")
-        .limit(limit);
-
-      if (coUsed.length >= 2) return coUsed;
-
-      // Some co-usage but not enough — top up with same-category tools
-      const existingIds = [tool.id, ...coUsed.map((t: any) => t.id)];
-      const topUp = await DB(T.TOOLS)
-        .select(...this.TOOL_SELECT_FIELDS)
-        .where("status", "active")
-        .where("category_slug", tool.category_slug)
-        .whereNotIn("id", existingIds)
-        .orderBy("views", "desc")
-        .limit(limit - coUsed.length);
-
-      return [...coUsed, ...topUp];
+        if (similar.length > 0) {
+          // Strip the virtual column before returning to keep the
+          // ToolItem shape clean on the frontend
+          return similar.map(({ tag_overlap, ...rest }: any) => rest);
+        }
+      } catch {
+        // Array functions unavailable or query failed — fall through
+      }
     }
 
-    // No event data at all (new tool) — show same-category tools as default
-    const sameCategory = await DB(T.TOOLS)
-      .select(...this.TOOL_SELECT_FIELDS)
-      .where("status", "active")
-      .where("category_slug", tool.category_slug)
-      .whereNot("id", tool.id)
-      .orderBy("is_featured", "desc")
-      .orderBy("views", "desc")
-      .limit(limit);
+    // Fallback: admin-curated popular tools
+    return this.getPopularTools(excludeId);
+  }
 
-    if (sameCategory.length >= 2) return sameCategory;
 
-    // Not even enough same-category tools — top up with global popular
-    const existingIds = [tool.id, ...sameCategory.map((t: any) => t.id)];
-    const topUp = await this.getFallbackTools(
-      existingIds,
-      limit - sameCategory.length,
-    );
 
-    return [...sameCategory, ...topUp];
+  private resolveCompressionStrategy(
+    mimeType: string,
+    sizeBytes: number,
+  ): CompressionStrategy {
+    const sizeKB = sizeBytes / 1024;
+    const sizeMB = sizeKB / 1024;
+
+    // Very large images — aggressive treatment regardless of format
+    if (sizeMB > 2) {
+      return {
+        outputFormat: "webp",
+        quality: 70,
+        maxDimension: 2400,
+        aiMessage: "Large image: converted to WebP and resized for web",
+      };
+    }
+
+    switch (mimeType) {
+      case "image/png": {
+        const quality = sizeKB < 500 ? 85 : 80;
+        return {
+          outputFormat: "webp",
+          quality,
+          maxDimension: null,
+          aiMessage:
+            "PNG converted to WebP for maximum compression with quality",
+        };
+      }
+
+      case "image/jpeg":
+      case "image/jpg": {
+        if (sizeKB < 500) {
+          return {
+            outputFormat: "jpeg",
+            quality: 82,
+            maxDimension: null,
+            aiMessage: "Small JPEG: light compression to preserve quality",
+          };
+        }
+        return {
+          outputFormat: "jpeg",
+          quality: 75,
+          maxDimension: null,
+          aiMessage: "JPEG optimized with balanced quality",
+        };
+      }
+
+      case "image/webp": {
+        return {
+          outputFormat: "webp",
+          quality: 80,
+          maxDimension: null,
+          aiMessage: "WebP re-encoded at optimal quality",
+        };
+      }
+
+      case "image/gif":
+      case "image/bmp":
+      default: {
+        return {
+          outputFormat: "webp",
+          quality: 75,
+          maxDimension: null,
+          aiMessage: "Converted to WebP for better compression",
+        };
+      }
+    }
+  }
+
+  public async aiCompressImage(
+    input: AiCompressInput,
+  ): Promise<AiCompressOutput> {
+    try {
+      // 1. Resolve strategy (swap this function for real AI in Phase 2)
+      const strategy = this.resolveCompressionStrategy(
+        input.mimeType,
+        input.size,
+      );
+
+      // 2. Build Sharp pipeline
+      let pipeline = sharp(input.buffer, { failOn: "none" });
+
+      // 3. Optional resize — preserves aspect ratio, never upscales
+      if (strategy.maxDimension) {
+        pipeline = pipeline.resize({
+          width: strategy.maxDimension,
+          height: strategy.maxDimension,
+          fit: "inside",
+          withoutEnlargement: true,
+        });
+      }
+
+      // 4. Apply output format + quality
+      switch (strategy.outputFormat) {
+        case "jpeg":
+          // mozjpeg encoder: better compression than libjpeg at same quality
+          pipeline = pipeline.jpeg({
+            quality: strategy.quality,
+            mozjpeg: true,
+          });
+          break;
+
+        case "webp":
+          // effort 4 = good compression speed trade-off (0 = fastest, 6 = best)
+          pipeline = pipeline.webp({ quality: strategy.quality, effort: 4 });
+          break;
+
+        case "png":
+          pipeline = pipeline.png({ compressionLevel: 9, effort: 10 });
+          break;
+      }
+
+      // 5. Execute
+      const outputBuffer = await pipeline.toBuffer();
+
+      return {
+        imageBase64: outputBuffer.toString("base64"),
+        mimeType: FORMAT_MIME[strategy.outputFormat],
+        outputFormat: strategy.outputFormat,
+        aiMessage: strategy.aiMessage,
+        originalSize: input.size,
+        compressedSize: outputBuffer.length,
+      };
+    } catch (err: any) {
+      // Surface a clean HTTP error so the controller's next(error) renders it
+      throw new HttpException(
+        500,
+        `Image optimization failed: ${err?.message ?? "unknown error"}`,
+      );
+    }
   }
 }
 

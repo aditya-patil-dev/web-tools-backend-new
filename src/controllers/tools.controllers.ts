@@ -67,7 +67,8 @@ class ToolsController {
     next: NextFunction,
   ): Promise<void> => {
     try {
-      const { category, slug } = req.params;
+      const category = req.params.category as string;
+      const slug = req.params.slug as string;
 
       if (!category || !slug) {
         throw new HttpException(400, "Category and slug are required");
@@ -117,33 +118,6 @@ class ToolsController {
       });
     } catch (error) {
       next(error);
-    }
-  };
-
-  public trackToolEvent = async (req, res, next) => {
-    try {
-      const { tool_id, event_type, session_id, ref_tool_id, meta } = req.body;
-
-      if (!tool_id || !event_type || !session_id) {
-        return res.status(400).json({
-          success: false,
-          message: "tool_id, event_type, session_id required",
-        });
-      }
-
-      await this.ToolsService.trackToolEvent({
-        tool_id,
-        event_type,
-        session_id,
-        ref_tool_id,
-        meta,
-      });
-
-      res.json({
-        success: true,
-      });
-    } catch (err) {
-      next(err);
     }
   };
 
@@ -239,66 +213,32 @@ class ToolsController {
     }
   };
 
-  public getRelatedTools = async (
+  /**
+   * POST /tools/ai-compress
+   */
+  public aiCompressImage = async (
     req: Request,
     res: Response,
     next: NextFunction,
-  ) => {
+  ): Promise<void> => {
     try {
-      const { slug } = req.params;
-      const limit = parseInt(req.query.limit as string) || 6;
+      const file = (req as any).file as Express.Multer.File | undefined;
 
-      if (!slug) throw new HttpException(400, "Tool slug is required");
+      if (!file) {
+        throw new HttpException(400, "Image file is required");
+      }
 
-      const tools = await this.ToolsService.getRelatedToolsBySlug(slug, limit);
-
-      res.status(200).json({
-        success: true,
-        message: "Related tools fetched",
-        data: tools,
+      const result = await this.ToolsService.aiCompressImage({
+        buffer: file.buffer,
+        mimeType: file.mimetype,
+        originalName: file.originalname,
+        size: file.size,
       });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  public getPopularTools = async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => {
-    try {
-      const limit = parseInt(req.query.limit as string) || 8;
-
-      const tools = await this.ToolsService.getPopularToolsPublic(limit);
 
       res.status(200).json({
         success: true,
-        message: "Popular tools fetched",
-        data: tools,
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  public getAlsoUsedTools = async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => {
-    try {
-      const { slug } = req.params;
-      const limit = parseInt(req.query.limit as string) || 5;
-
-      if (!slug) throw new HttpException(400, "Tool slug is required");
-
-      const tools = await this.ToolsService.getAlsoUsedToolsBySlug(slug, limit);
-
-      res.status(200).json({
-        success: true,
-        message: "Also used tools fetched",
-        data: tools,
+        message: "Image optimized successfully",
+        data: result,
       });
     } catch (error) {
       next(error);

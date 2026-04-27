@@ -82,6 +82,7 @@ exports.REGISTRY = {
         required: ["category_slug", "page_title"],
         transforms: {
             noindex: "boolean",
+            meta_keywords: "array",
         },
         enums: {
             status: ["draft", "published", "archived"],
@@ -121,6 +122,7 @@ exports.REGISTRY = {
             faqs: "json",
             schema_markup: "json",
             noindex: "boolean",
+            meta_keywords: "array",
         },
         enums: {
             status: ["draft", "active", "archived"],

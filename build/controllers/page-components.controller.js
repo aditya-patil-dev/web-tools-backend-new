@@ -17,7 +17,7 @@ class PageComponentsController {
          */
         this.getPageComponents = async (req, res, next) => {
             try {
-                const { page_key } = req.params;
+                const page_key = req.params.page_key;
                 if (!page_key) {
                     throw new HttpException_1.default(400, "Page key is required");
                 }
@@ -38,7 +38,8 @@ class PageComponentsController {
          */
         this.getComponentByType = async (req, res, next) => {
             try {
-                const { page_key, component_type } = req.params;
+                const page_key = req.params.page_key;
+                const component_type = req.params.component_type;
                 if (!page_key || !component_type) {
                     throw new HttpException_1.default(400, "Page key and component type are required");
                 }

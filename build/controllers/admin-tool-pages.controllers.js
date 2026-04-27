@@ -54,7 +54,7 @@ class AdminToolPagesController {
          */
         this.getToolPageBySlug = async (req, res, next) => {
             try {
-                const { slug } = req.params;
+                const slug = req.params.slug;
                 const toolPage = await this.service.getToolPageBySlug(slug);
                 if (!toolPage) {
                     throw new HttpException_1.default(404, "Tool page not found");
@@ -114,7 +114,7 @@ class AdminToolPagesController {
          */
         this.updateToolPage = async (req, res, next) => {
             try {
-                const { slug } = req.params;
+                const slug = req.params.slug;
                 const toolPageData = req.body;
                 // Check if tool page exists
                 const existingPage = await this.service.getToolPageBySlug(slug);
@@ -138,7 +138,7 @@ class AdminToolPagesController {
          */
         this.deleteToolPage = async (req, res, next) => {
             try {
-                const { slug } = req.params;
+                const slug = req.params.slug;
                 await this.service.deleteToolPage(slug);
                 res.status(200).json({
                     success: true,

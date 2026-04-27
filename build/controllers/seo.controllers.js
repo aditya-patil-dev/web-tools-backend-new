@@ -17,7 +17,7 @@ class SeoController {
          */
         this.getStaticPageSEO = async (req, res, next) => {
             try {
-                const { page_key } = req.params;
+                const page_key = req.params.page_key;
                 if (!page_key) {
                     throw new HttpException_1.default(400, "Page key is required");
                 }

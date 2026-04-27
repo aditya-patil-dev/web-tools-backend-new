@@ -13,6 +13,25 @@ const upload = multer({
   },
 });
 
+// Image upload — separate multer instance for image routes
+const imageUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB max
+  fileFilter: (_req, file, cb) => {
+    const ALLOWED = [
+      "image/png",
+      "image/jpeg",
+      "image/jpg",
+      "image/webp",
+      "image/gif",
+      "image/bmp",
+    ];
+    if (ALLOWED.includes(file.mimetype)) cb(null, true);
+    else
+      cb(new Error("Only image files (PNG, JPG, WebP, GIF, BMP) are allowed"));
+  },
+});
+
 class ToolsRoute implements Route {
   public path = "/tools";
   public router = Router();
@@ -23,46 +42,33 @@ class ToolsRoute implements Route {
   }
 
   private initializeRoutes() {
-    // All tools listing
+    // ── Listing & detail ───────────────────────────────────────────────
     this.router.get(`/all`, this.ToolsController.getAllTools);
-
-    // Listing page (cards)
     this.router.get(`/`, this.ToolsController.getTools);
-
-    // Tool detail page
     this.router.get(`/:category/:slug`, this.ToolsController.getToolPage);
 
-    // speed test route
+    // ── Utility tools ──────────────────────────────────────────────────
     this.router.post("/speed-test", this.ToolsController.testWebsiteSpeed);
-
-    // TOOL EVENT TRACKING
-    this.router.post("/events/track", this.ToolsController.trackToolEvent);
-
-    // Open Graph Checker
     this.router.post("/og-check", this.ToolsController.checkOpenGraph);
 
-    // PDF protection
+    // ── PDF tools ──────────────────────────────────────────────────────
     this.router.post(
       "/protect-pdf",
       upload.single("pdf"),
       this.ToolsController.protectPdf,
     );
-
-    // PDF unlock
     this.router.post(
       "/unlock-pdf",
       upload.single("pdf"),
       this.ToolsController.unlockPdf,
     );
 
-    // Related tools
-    this.router.get(`/related/:slug`, this.ToolsController.getRelatedTools);
-
-    // Popular tools
-    this.router.get(`/popular`, this.ToolsController.getPopularTools);
-
-    // Also used tools
-    this.router.get(`/also-used/:slug`, this.ToolsController.getAlsoUsedTools);
+    // ── AI Image Optimizer ─────────────────────────────────────────────
+    this.router.post(
+      "/ai-compress",
+      imageUpload.single("image"),
+      this.ToolsController.aiCompressImage,
+    );
   }
 }
 

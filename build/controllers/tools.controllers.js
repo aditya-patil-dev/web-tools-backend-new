@@ -58,7 +58,8 @@ class ToolsController {
          */
         this.getToolPage = async (req, res, next) => {
             try {
-                const { category, slug } = req.params;
+                const category = req.params.category;
+                const slug = req.params.slug;
                 if (!category || !slug) {
                     throw new HttpException_1.default(400, "Category and slug are required");
                 }
@@ -97,30 +98,6 @@ class ToolsController {
             }
             catch (error) {
                 next(error);
-            }
-        };
-        this.trackToolEvent = async (req, res, next) => {
-            try {
-                const { tool_id, event_type, session_id, ref_tool_id, meta } = req.body;
-                if (!tool_id || !event_type || !session_id) {
-                    return res.status(400).json({
-                        success: false,
-                        message: "tool_id, event_type, session_id required",
-                    });
-                }
-                await this.ToolsService.trackToolEvent({
-                    tool_id,
-                    event_type,
-                    session_id,
-                    ref_tool_id,
-                    meta,
-                });
-                res.json({
-                    success: true,
-                });
-            }
-            catch (err) {
-                next(err);
             }
         };
         this.checkOpenGraph = async (req, res, next) => {
@@ -197,48 +174,25 @@ class ToolsController {
                 next(error);
             }
         };
-        this.getRelatedTools = async (req, res, next) => {
+        /**
+         * POST /tools/ai-compress
+         */
+        this.aiCompressImage = async (req, res, next) => {
             try {
-                const { slug } = req.params;
-                const limit = parseInt(req.query.limit) || 6;
-                if (!slug)
-                    throw new HttpException_1.default(400, "Tool slug is required");
-                const tools = await this.ToolsService.getRelatedToolsBySlug(slug, limit);
-                res.status(200).json({
-                    success: true,
-                    message: "Related tools fetched",
-                    data: tools,
+                const file = req.file;
+                if (!file) {
+                    throw new HttpException_1.default(400, "Image file is required");
+                }
+                const result = await this.ToolsService.aiCompressImage({
+                    buffer: file.buffer,
+                    mimeType: file.mimetype,
+                    originalName: file.originalname,
+                    size: file.size,
                 });
-            }
-            catch (error) {
-                next(error);
-            }
-        };
-        this.getPopularTools = async (req, res, next) => {
-            try {
-                const limit = parseInt(req.query.limit) || 8;
-                const tools = await this.ToolsService.getPopularToolsPublic(limit);
                 res.status(200).json({
                     success: true,
-                    message: "Popular tools fetched",
-                    data: tools,
-                });
-            }
-            catch (error) {
-                next(error);
-            }
-        };
-        this.getAlsoUsedTools = async (req, res, next) => {
-            try {
-                const { slug } = req.params;
-                const limit = parseInt(req.query.limit) || 5;
-                if (!slug)
-                    throw new HttpException_1.default(400, "Tool slug is required");
-                const tools = await this.ToolsService.getAlsoUsedToolsBySlug(slug, limit);
-                res.status(200).json({
-                    success: true,
-                    message: "Also used tools fetched",
-                    data: tools,
+                    message: "Image optimized successfully",
+                    data: result,
                 });
             }
             catch (error) {
