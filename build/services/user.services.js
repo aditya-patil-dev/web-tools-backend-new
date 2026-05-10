@@ -111,8 +111,21 @@ class UsersService {
             throw new HttpException_1.default(403, "Workspace is not active.");
         }
         // 7) create JWT (access token)
-        const expiresIn = process.env.JWT_ACCESS_EXPIRES_IN || "24h";
-        const expiresInSeconds = 24 * 60 * 60;
+        const expiresIn = process.env.JWT_ACCESS_EXPIRES_IN || "7d";
+        // Parse expiresIn string to seconds for cookie maxAge
+        const expiresInSeconds = (() => {
+            const match = expiresIn.match(/^(\d+)(s|m|h|d)$/);
+            if (!match)
+                return 7 * 24 * 60 * 60; // default 7 days
+            const num = parseInt(match[1], 10);
+            switch (match[2]) {
+                case "s": return num;
+                case "m": return num * 60;
+                case "h": return num * 60 * 60;
+                case "d": return num * 24 * 60 * 60;
+                default: return 7 * 24 * 60 * 60;
+            }
+        })();
         const token = jsonwebtoken_1.default.sign({
             sub: user.id,
             email: user.email,
