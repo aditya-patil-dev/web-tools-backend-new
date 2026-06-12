@@ -27,6 +27,7 @@ const contact_routes_1 = __importDefault(require("./routes/contact.routes"));
 const settings_routes_1 = __importDefault(require("./routes/settings.routes"));
 const import_export_routes_1 = __importDefault(require("./routes/import-export.routes"));
 const keyword_routes_1 = __importDefault(require("./routes/keyword.routes"));
+const ai_tools_routes_1 = __importDefault(require("./routes/ai-tools.routes"));
 /**
  * Validate environment variables before booting the app
  * Fail fast if something critical is missing
@@ -50,6 +51,7 @@ const routes = [
     new settings_routes_1.default(),
     new import_export_routes_1.default(),
     new keyword_routes_1.default(),
+    new ai_tools_routes_1.default(),
 ];
 /**
  * Bootstrap application
