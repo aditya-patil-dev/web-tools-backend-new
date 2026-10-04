@@ -57,6 +57,14 @@ const routes = [
  */
 const app = new App(routes);
 
+process.on("uncaughtException", (err) => {
+  console.error("FATAL: Uncaught Exception:", err);
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("FATAL: Unhandled Rejection:", reason);
+});
+
 /**
  * Start server
  */

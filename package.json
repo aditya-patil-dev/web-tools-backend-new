@@ -4,6 +4,7 @@
   "description": "rest api",
   "main": "app.ts",
   "scripts": {
+    "gcp-build": "npm run build",
     "main": "npm run build && cross-env NODE_ENV=production node build/server.js",
     "start": "cross-env NODE_ENV=production node build/server.js",
     "dev": "cross-env NODE_ENV=development nodemon",

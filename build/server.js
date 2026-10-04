@@ -55,6 +55,12 @@ const routes = [
  * Bootstrap application
  */
 const app = new app_1.default(routes);
+process.on("uncaughtException", (err) => {
+    console.error("FATAL: Uncaught Exception:", err);
+});
+process.on("unhandledRejection", (reason) => {
+    console.error("FATAL: Unhandled Rejection:", reason);
+});
 /**
  * Start server
  */

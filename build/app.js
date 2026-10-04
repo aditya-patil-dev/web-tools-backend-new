@@ -29,8 +29,8 @@ class App {
         this.initializeErrorHandling();
     }
     listen() {
-        const server = this.app.listen(this.port, () => {
-            logger_1.logger.info(`🚀 App listening on port ${this.port}. Environment: ${this.env}.`);
+        const server = this.app.listen(this.port, "0.0.0.0", () => {
+            logger_1.logger.info(`🚀 App listening on 0.0.0.0:${this.port}. Environment: ${this.env}.`);
         });
         // Future-proof: graceful shutdown hooks (doesn't break if unused)
         const shutdown = (signal) => {

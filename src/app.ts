@@ -33,9 +33,9 @@ class App {
   }
 
   public listen() {
-    const server = this.app.listen(this.port, () => {
+    const server = this.app.listen(this.port, "0.0.0.0", () => {
       logger.info(
-        `🚀 App listening on port ${this.port}. Environment: ${this.env}.`
+        `🚀 App listening on 0.0.0.0:${this.port}. Environment: ${this.env}.`
       );
     });
 
