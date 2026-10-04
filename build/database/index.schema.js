@@ -55,6 +55,7 @@ exports.T = {
     LEGAL_PAGES: "legal_pages",
     CONTACT_MESSAGES: "contact_messages",
     SITE_SETTINGS: "site_settings",
+    TOOL_FEEDBACK: "tool_feedback",
 };
 /**
  * Creates the procedure that is then added as a trigger to every table.

@@ -1032,6 +1032,31 @@ class ToolsService {
       );
     }
   }
+
+  public async createFeedback(data: {
+    tool_slug: string;
+    rating: string;
+    reason?: string;
+    session_id?: string;
+    user_agent?: string;
+    ip_address?: string;
+  }): Promise<any> {
+    const tool = await DB(T.TOOLS).where({ slug: data.tool_slug }).first();
+
+    const [feedback] = await DB(T.TOOL_FEEDBACK)
+      .insert({
+        tool_slug: data.tool_slug,
+        tool_id: tool ? tool.id : null,
+        rating: data.rating,
+        reason: data.reason || null,
+        session_id: data.session_id || null,
+        user_agent: data.user_agent || null,
+        ip_address: data.ip_address || null,
+      })
+      .returning("*");
+
+    return feedback;
+  }
 }
 
 export default ToolsService;

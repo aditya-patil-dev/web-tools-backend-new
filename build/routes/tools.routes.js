@@ -36,6 +36,8 @@ const imageUpload = (0, multer_1.default)({
             cb(new Error("Only image files (PNG, JPG, WebP, GIF, BMP) are allowed"));
     },
 });
+const validation_middleware_1 = __importDefault(require("../middlewares/validation.middleware"));
+const tool_feedback_dto_1 = require("../dtos/tool-feedback.dto");
 class ToolsRoute {
     constructor() {
         this.path = "/tools";
@@ -48,6 +50,8 @@ class ToolsRoute {
         this.router.get(`/all`, this.ToolsController.getAllTools);
         this.router.get(`/`, this.ToolsController.getTools);
         this.router.get(`/:category/:slug`, this.ToolsController.getToolPage);
+        // ── Feedback ───────────────────────────────────────────────────────
+        this.router.post("/feedback", (0, validation_middleware_1.default)(tool_feedback_dto_1.CreateToolFeedbackDto, "body"), this.ToolsController.submitFeedback);
         // ── Utility tools ──────────────────────────────────────────────────
         this.router.post("/speed-test", this.ToolsController.testWebsiteSpeed);
         this.router.post("/og-check", this.ToolsController.checkOpenGraph);

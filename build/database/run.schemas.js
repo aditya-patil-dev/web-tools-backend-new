@@ -21,6 +21,7 @@ const tool_events_schema_1 = require("./tool_events.schema");
 const legal_pages_schema_1 = require("./legal_pages.schema");
 const contact_schema_1 = require("./contact.schema");
 const site_settings_schema_1 = require("./site_settings.schema");
+const tool_feedback_schema_1 = require("./tool_feedback.schema");
 const run = async () => {
     await (0, index_schema_1.createProcedure)();
     // Order matters due to FKs
@@ -44,6 +45,7 @@ const run = async () => {
     await (0, legal_pages_schema_1.seed)(false);
     await (0, contact_schema_1.seed)(false);
     await (0, site_settings_schema_1.seed)(false);
+    await (0, tool_feedback_schema_1.seed)(false);
 };
 run().catch(console.error);
 //# sourceMappingURL=run.schemas.js.map

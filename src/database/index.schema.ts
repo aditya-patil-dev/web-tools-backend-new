@@ -54,6 +54,7 @@ export const T = {
   LEGAL_PAGES: "legal_pages",
   CONTACT_MESSAGES: "contact_messages",
   SITE_SETTINGS: "site_settings",
+  TOOL_FEEDBACK: "tool_feedback",
 } as const;
 
 /**

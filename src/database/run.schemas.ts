@@ -19,6 +19,7 @@ import { seed as seedToolEvents } from "./tool_events.schema";
 import { seed as seedLegalPages } from "./legal_pages.schema";
 import { seed as seedContactMessages } from "./contact.schema";
 import { seed as seedSiteSettings } from "./site_settings.schema";
+import { seed as seedToolFeedback } from "./tool_feedback.schema";
 
 const run = async () => {
     await createProcedure();
@@ -44,6 +45,7 @@ const run = async () => {
     await seedLegalPages(false);
     await seedContactMessages(false);
     await seedSiteSettings(false);
+    await seedToolFeedback(false);
 
 };
 

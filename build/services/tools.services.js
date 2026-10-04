@@ -785,6 +785,21 @@ class ToolsService {
             throw new HttpException_1.default(500, `Image optimization failed: ${(_a = err === null || err === void 0 ? void 0 : err.message) !== null && _a !== void 0 ? _a : "unknown error"}`);
         }
     }
+    async createFeedback(data) {
+        const tool = await (0, index_schema_1.default)(index_schema_1.T.TOOLS).where({ slug: data.tool_slug }).first();
+        const [feedback] = await (0, index_schema_1.default)(index_schema_1.T.TOOL_FEEDBACK)
+            .insert({
+            tool_slug: data.tool_slug,
+            tool_id: tool ? tool.id : null,
+            rating: data.rating,
+            reason: data.reason || null,
+            session_id: data.session_id || null,
+            user_agent: data.user_agent || null,
+            ip_address: data.ip_address || null,
+        })
+            .returning("*");
+        return feedback;
+    }
 }
 exports.default = ToolsService;
 //# sourceMappingURL=tools.services.js.map

@@ -32,6 +32,9 @@ const imageUpload = multer({
   },
 });
 
+import validationMiddleware from "../middlewares/validation.middleware";
+import { CreateToolFeedbackDto } from "../dtos/tool-feedback.dto";
+
 class ToolsRoute implements Route {
   public path = "/tools";
   public router = Router();
@@ -46,6 +49,13 @@ class ToolsRoute implements Route {
     this.router.get(`/all`, this.ToolsController.getAllTools);
     this.router.get(`/`, this.ToolsController.getTools);
     this.router.get(`/:category/:slug`, this.ToolsController.getToolPage);
+
+    // ── Feedback ───────────────────────────────────────────────────────
+    this.router.post(
+      "/feedback",
+      validationMiddleware(CreateToolFeedbackDto, "body"),
+      this.ToolsController.submitFeedback,
+    );
 
     // ── Utility tools ──────────────────────────────────────────────────
     this.router.post("/speed-test", this.ToolsController.testWebsiteSpeed);

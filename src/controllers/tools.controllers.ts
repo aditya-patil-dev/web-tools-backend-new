@@ -244,6 +244,36 @@ class ToolsController {
       next(error);
     }
   };
+
+  /**
+   * POST /tools/feedback
+   */
+  public submitFeedback = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const { tool_slug, rating, reason, session_id } = req.body;
+
+      const feedback = await this.ToolsService.createFeedback({
+        tool_slug,
+        rating,
+        reason,
+        session_id,
+        user_agent: req.headers["user-agent"] || undefined,
+        ip_address: req.ip,
+      });
+
+      res.status(201).json({
+        success: true,
+        message: "Thank you for your feedback!",
+        data: feedback,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default ToolsController;
