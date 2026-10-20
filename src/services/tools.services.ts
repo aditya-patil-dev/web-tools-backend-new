@@ -1041,6 +1041,12 @@ class ToolsService {
     user_agent?: string;
     ip_address?: string;
   }): Promise<any> {
+    const tableExists = await DB.schema.hasTable(T.TOOL_FEEDBACK);
+    if (!tableExists) {
+      const { seed } = await import("../database/tool_feedback.schema");
+      await seed(false);
+    }
+
     const tool = await DB(T.TOOLS).where({ slug: data.tool_slug }).first();
 
     const [feedback] = await DB(T.TOOL_FEEDBACK)

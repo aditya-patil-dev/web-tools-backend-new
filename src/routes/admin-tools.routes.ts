@@ -64,6 +64,19 @@ class AdminToolsRoute implements Route {
     this.router.get(`/check/slug/:slug`, this.controller.checkSlugAvailability);
 
     // ============================================
+    // FEEDBACK & RATINGS  (register before /:id)
+    // ============================================
+
+    // GET /admin/tools/feedback/stats
+    this.router.get(`/feedback/stats`, this.controller.getFeedbackStats);
+
+    // GET /admin/tools/feedback
+    this.router.get(`/feedback`, this.controller.getFeedbackList);
+
+    // DELETE /admin/tools/feedback/:id
+    this.router.delete(`/feedback/:id`, this.controller.deleteFeedback);
+
+    // ============================================
     // ROOT COLLECTION OPERATIONS
     // ============================================
 

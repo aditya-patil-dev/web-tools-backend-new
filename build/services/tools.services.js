@@ -786,6 +786,11 @@ class ToolsService {
         }
     }
     async createFeedback(data) {
+        const tableExists = await index_schema_1.default.schema.hasTable(index_schema_1.T.TOOL_FEEDBACK);
+        if (!tableExists) {
+            const { seed } = await Promise.resolve().then(() => __importStar(require("../database/tool_feedback.schema")));
+            await seed(false);
+        }
         const tool = await (0, index_schema_1.default)(index_schema_1.T.TOOLS).where({ slug: data.tool_slug }).first();
         const [feedback] = await (0, index_schema_1.default)(index_schema_1.T.TOOL_FEEDBACK)
             .insert({

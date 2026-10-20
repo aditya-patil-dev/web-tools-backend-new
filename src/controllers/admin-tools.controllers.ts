@@ -541,6 +541,86 @@ class AdminToolsController {
       next(error);
     }
   };
+
+  /**
+   * GET /admin/tools/feedback
+   * List feedback entries with pagination and filters
+   */
+  public getFeedbackList = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const filters = {
+        page: parseInt(req.query.page as string) || 1,
+        limit: parseInt(req.query.limit as string) || 20,
+        search: req.query.search as string,
+        tool_slug: req.query.tool_slug as string,
+        rating: req.query.rating as string,
+      };
+
+      const result = await this.service.getFeedbackList(filters);
+
+      res.status(200).json({
+        success: true,
+        message: "Feedback list retrieved successfully",
+        data: result.feedback,
+        meta: {
+          total: result.total,
+          page: filters.page,
+          limit: filters.limit,
+          total_pages: Math.ceil(result.total / filters.limit),
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * GET /admin/tools/feedback/stats
+   * Feedback statistics & KPI metrics
+   */
+  public getFeedbackStats = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const stats = await this.service.getFeedbackStats();
+
+      res.status(200).json({
+        success: true,
+        message: "Feedback stats retrieved successfully",
+        data: stats,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * DELETE /admin/tools/feedback/:id
+   * Delete single feedback entry
+   */
+  public deleteFeedback = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const id = parseInt(req.params.id as string);
+      await this.service.deleteFeedback(id);
+
+      res.status(200).json({
+        success: true,
+        message: "Feedback record deleted successfully",
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default AdminToolsController;

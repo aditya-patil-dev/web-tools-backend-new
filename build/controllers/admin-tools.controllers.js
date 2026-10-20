@@ -421,6 +421,70 @@ class AdminToolsController {
                 next(error);
             }
         };
+        /**
+         * GET /admin/tools/feedback
+         * List feedback entries with pagination and filters
+         */
+        this.getFeedbackList = async (req, res, next) => {
+            try {
+                const filters = {
+                    page: parseInt(req.query.page) || 1,
+                    limit: parseInt(req.query.limit) || 20,
+                    search: req.query.search,
+                    tool_slug: req.query.tool_slug,
+                    rating: req.query.rating,
+                };
+                const result = await this.service.getFeedbackList(filters);
+                res.status(200).json({
+                    success: true,
+                    message: "Feedback list retrieved successfully",
+                    data: result.feedback,
+                    meta: {
+                        total: result.total,
+                        page: filters.page,
+                        limit: filters.limit,
+                        total_pages: Math.ceil(result.total / filters.limit),
+                    },
+                });
+            }
+            catch (error) {
+                next(error);
+            }
+        };
+        /**
+         * GET /admin/tools/feedback/stats
+         * Feedback statistics & KPI metrics
+         */
+        this.getFeedbackStats = async (req, res, next) => {
+            try {
+                const stats = await this.service.getFeedbackStats();
+                res.status(200).json({
+                    success: true,
+                    message: "Feedback stats retrieved successfully",
+                    data: stats,
+                });
+            }
+            catch (error) {
+                next(error);
+            }
+        };
+        /**
+         * DELETE /admin/tools/feedback/:id
+         * Delete single feedback entry
+         */
+        this.deleteFeedback = async (req, res, next) => {
+            try {
+                const id = parseInt(req.params.id);
+                await this.service.deleteFeedback(id);
+                res.status(200).json({
+                    success: true,
+                    message: "Feedback record deleted successfully",
+                });
+            }
+            catch (error) {
+                next(error);
+            }
+        };
     }
 }
 exports.default = AdminToolsController;

@@ -799,6 +799,153 @@ class AdminToolsService {
       throw error;
     }
   }
+
+  /**
+   * Get feedback list with filters and pagination
+   */
+  public async getFeedbackList(filters: {
+    page: number;
+    limit: number;
+    search?: string;
+    tool_slug?: string;
+    rating?: string;
+  }) {
+    const page = Math.max(1, filters.page || 1);
+    const limit = Math.max(1, Math.min(100, filters.limit || 20));
+    const offset = (page - 1) * limit;
+
+    let query = DB(`${T.TOOL_FEEDBACK} as tf`)
+      .leftJoin(`${T.TOOLS} as t`, function () {
+        this.on("tf.tool_id", "=", "t.id").orOn("tf.tool_slug", "=", "t.slug");
+      })
+      .select(
+        "tf.id",
+        "tf.tool_slug",
+        "tf.tool_id",
+        "tf.rating",
+        "tf.reason",
+        "tf.session_id",
+        "tf.user_agent",
+        "tf.ip_address",
+        "tf.created_at",
+        "t.title as tool_title",
+        "t.category_slug",
+      );
+
+    if (filters.rating && filters.rating !== "all") {
+      query = query.where("tf.rating", filters.rating);
+    }
+
+    if (filters.tool_slug && filters.tool_slug !== "all") {
+      query = query.where("tf.tool_slug", filters.tool_slug);
+    }
+
+    if (filters.search && filters.search.trim()) {
+      const term = `%${filters.search.trim()}%`;
+      query = query.where(function () {
+        this.where("tf.tool_slug", "ilike", term)
+          .orWhere("tf.reason", "ilike", term)
+          .orWhere("t.title", "ilike", term);
+      });
+    }
+
+    // Count query
+    let countQuery = DB(`${T.TOOL_FEEDBACK} as tf`)
+      .leftJoin(`${T.TOOLS} as t`, function () {
+        this.on("tf.tool_id", "=", "t.id").orOn("tf.tool_slug", "=", "t.slug");
+      });
+
+    if (filters.rating && filters.rating !== "all") {
+      countQuery = countQuery.where("tf.rating", filters.rating);
+    }
+    if (filters.tool_slug && filters.tool_slug !== "all") {
+      countQuery = countQuery.where("tf.tool_slug", filters.tool_slug);
+    }
+    if (filters.search && filters.search.trim()) {
+      const term = `%${filters.search.trim()}%`;
+      countQuery = countQuery.where(function () {
+        this.where("tf.tool_slug", "ilike", term)
+          .orWhere("tf.reason", "ilike", term)
+          .orWhere("t.title", "ilike", term);
+      });
+    }
+
+    const [totalResult] = await countQuery.count({ total: "tf.id" });
+    const total = parseInt(totalResult?.total as string, 10) || 0;
+
+    const feedback = await query
+      .orderBy("tf.created_at", "desc")
+      .limit(limit)
+      .offset(offset);
+
+    return { feedback, total };
+  }
+
+  /**
+   * Get feedback analytics / KPI summary
+   */
+  public async getFeedbackStats() {
+    const [totalRow] = await DB(T.TOOL_FEEDBACK).count({ count: "id" });
+    const total = parseInt(totalRow?.count as string, 10) || 0;
+
+    const [likesRow] = await DB(T.TOOL_FEEDBACK)
+      .where({ rating: "like" })
+      .count({ count: "id" });
+    const likes = parseInt(likesRow?.count as string, 10) || 0;
+
+    const [dislikesRow] = await DB(T.TOOL_FEEDBACK)
+      .where({ rating: "dislike" })
+      .count({ count: "id" });
+    const dislikes = parseInt(dislikesRow?.count as string, 10) || 0;
+
+    const [commentsRow] = await DB(T.TOOL_FEEDBACK)
+      .whereNotNull("reason")
+      .whereNot("reason", "")
+      .count({ count: "id" });
+    const with_comments = parseInt(commentsRow?.count as string, 10) || 0;
+
+    const satisfaction_rate =
+      total > 0 ? Number(((likes / total) * 100).toFixed(1)) : 100;
+
+    // Top 5 tools by positive feedback
+    const top_liked = await DB(T.TOOL_FEEDBACK)
+      .select("tool_slug")
+      .count({ count: "id" })
+      .where({ rating: "like" })
+      .groupBy("tool_slug")
+      .orderBy("count", "desc")
+      .limit(5);
+
+    // Top 5 tools with dislikes (needs attention)
+    const top_disliked = await DB(T.TOOL_FEEDBACK)
+      .select("tool_slug")
+      .count({ count: "id" })
+      .where({ rating: "dislike" })
+      .groupBy("tool_slug")
+      .orderBy("count", "desc")
+      .limit(5);
+
+    return {
+      total,
+      likes,
+      dislikes,
+      with_comments,
+      satisfaction_rate,
+      top_liked,
+      top_disliked,
+    };
+  }
+
+  /**
+   * Delete a feedback record
+   */
+  public async deleteFeedback(id: number) {
+    const deleted = await DB(T.TOOL_FEEDBACK).where({ id }).delete();
+    if (!deleted) {
+      throw new HttpException(404, "Feedback record not found");
+    }
+    return true;
+  }
 }
 
 export default AdminToolsService;
