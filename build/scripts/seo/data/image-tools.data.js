@@ -1214,6 +1214,291 @@ exports.imageToolsSeoData = [
 </ol>
 <p><em>Note: Existing HEIC photos on your phone won't be converted by this setting, but you can convert them anytime right here with FusionTools.</em></p>
 `
+    },
+    // ─────────────────────────────────────────────────────────────────────────
+    // 12. SVG to PNG Converter
+    // ─────────────────────────────────────────────────────────────────────────
+    {
+        tool_slug: "svg-to-png",
+        page_title: "Free SVG to PNG Converter – Convert Vector Graphics to Lossless PNG Online",
+        page_intro: "Transform vector SVG graphics and raw SVG markup into high-resolution, lossless PNG images at up to 8x scale. Enjoy transparent backgrounds, custom dimensions, and zero quality loss.",
+        meta_title: "SVG to PNG Converter – Free, Instant & High-Resolution Vector Export",
+        meta_description: "Convert SVG to PNG online for free. Support for custom scaling up to 8x, transparent backgrounds, raw SVG code pasting, and batch conversion. 100% private in-browser tool.",
+        meta_keywords: [
+            "svg to png",
+            "convert svg to png",
+            "vector to png",
+            "svg to png high resolution",
+            "svg to transparent png",
+            "batch svg to png",
+            "online svg converter"
+        ],
+        canonical_url: "https://fusiontools.in/tools/image-tools/svg-to-png",
+        noindex: false,
+        schema_markup: null,
+        status: "active",
+        features: [
+            {
+                title: "Scale Up to 8x",
+                description: "Rasterize vector files at crisp 2x, 4x, or 8x retina resolutions without blurriness."
+            },
+            {
+                title: "Transparent & Color Backgrounds",
+                description: "Export with transparent alpha channels or solid white, black, or custom hex backdrops."
+            },
+            {
+                title: "Raw SVG Code Support",
+                description: "Paste SVG XML code directly to preview and convert without saving a file first."
+            },
+            {
+                title: "Batch ZIP Export",
+                description: "Convert dozens of vector icons and graphics at once and download them in a single ZIP."
+            }
+        ],
+        faqs: [
+            {
+                question: "Can I convert SVG to PNG with a transparent background?",
+                answer: "Yes! By default, our converter preserves the transparent alpha channel of your vector SVG graphic."
+            },
+            {
+                question: "Can I increase the resolution when converting SVG to PNG?",
+                answer: "Because SVG is resolution-independent vector art, you can upscale your output to 2x, 4x, 8x, or custom pixel dimensions with pixel-perfect sharpness."
+            }
+        ],
+        long_content: `
+<h2>Why Convert SVG to PNG?</h2>
+<p>While SVG is the gold standard for web icons and responsive design, many platforms (like social media, legacy applications, and document editors) only accept raster PNG images. Our converter delivers ultra-sharp PNG exports from any SVG file or raw code snippet.</p>
+`
+    },
+    // ─────────────────────────────────────────────────────────────────────────
+    // 13. Image Cropper & Circle Avatar Maker
+    // ─────────────────────────────────────────────────────────────────────────
+    {
+        tool_slug: "image-cropper",
+        page_title: "Online Image Cropper & Circle Avatar Maker – Crop Photos Free",
+        page_intro: "Crop photos with precision, create circular profile avatars for LinkedIn, Discord, and Twitter, and export at custom resolutions with zero loss in quality.",
+        meta_title: "Image Cropper & Circle Avatar Maker – Free Online Photo Cropping",
+        meta_description: "Crop images online for free. Create circle avatars with transparent borders, crop to 1:1, 16:9, 4:3, 9:16 aspect ratios, and rotate or flip photos in your browser.",
+        meta_keywords: [
+            "image cropper",
+            "crop photo online",
+            "circle avatar maker",
+            "circular profile picture maker",
+            "crop image 1:1",
+            "discord avatar maker",
+            "linkedin photo crop"
+        ],
+        canonical_url: "https://fusiontools.in/tools/image-tools/image-cropper",
+        noindex: false,
+        schema_markup: null,
+        status: "active",
+        features: [
+            {
+                title: "Circle Avatar Mode",
+                description: "Preview circular mask overlays and export circular PNGs with transparent outer borders."
+            },
+            {
+                title: "Social Aspect Ratio Presets",
+                description: "Quickly crop to 1:1 Square, 16:9 Banner, 4:3 Photo, 9:16 Story/Reel, or freeform."
+            },
+            {
+                title: "Rotation & Zoom",
+                description: "Fine-tune crop positioning with interactive zoom sliders and 90-degree rotation buttons."
+            }
+        ],
+        faqs: [
+            {
+                question: "How do I make a circular profile picture with a transparent background?",
+                answer: "Upload your photo, select the 'Circle Avatar' preset, position the circular guide over your face or logo, and click Download. The corners will be completely transparent in PNG format."
+            }
+        ],
+        long_content: `
+<h2>Create Pixel-Perfect Profile Avatars and Social Crops</h2>
+<p>Whether you're prepping a headshot for LinkedIn, an avatar for Discord, or a thumbnail for YouTube, this tool gives you effortless framing control directly inside your browser.</p>
+`
+    },
+    // ─────────────────────────────────────────────────────────────────────────
+    // 14. Screenshot Device Mockup Generator
+    // ─────────────────────────────────────────────────────────────────────────
+    {
+        tool_slug: "device-mockup-generator",
+        page_title: "Screenshot Device Mockup Generator – Create MacBook, iPhone & Browser Mockups",
+        page_intro: "Turn ordinary UI screenshots into professional product mockups with MacBook, iPhone, Safari/Chrome browser frames, dynamic shadows, and vibrant gradient backdrops.",
+        meta_title: "Screenshot Device Mockup Generator – Free MacBook, iPhone & Browser Frames",
+        meta_description: "Generate beautiful device mockups online. Wrap your app screenshots in iPhone, MacBook, iPad, and macOS browser windows with curated gradients. Export 2x retina visuals.",
+        meta_keywords: [
+            "device mockup generator",
+            "screenshot mockup",
+            "browser mockup generator",
+            "iphone mockup generator",
+            "macbook mockup free",
+            "product presentation mockup"
+        ],
+        canonical_url: "https://fusiontools.in/tools/image-tools/device-mockup-generator",
+        noindex: false,
+        schema_markup: null,
+        status: "active",
+        features: [
+            {
+                title: "Realistic Device Frames",
+                description: "Choose from macOS browser windows, modern smartphones, MacBook laptops, and clean cards."
+            },
+            {
+                title: "Curated Mesh Gradients",
+                description: "Elevate your screenshots with eye-catching modern gradients or sleek dark slates."
+            },
+            {
+                title: "2x Retina Quality",
+                description: "Export high-resolution 2x retina images ready for pitch decks, Dribbble, and X posts."
+            }
+        ],
+        faqs: [
+            {
+                question: "Are device mockups exported in high resolution?",
+                answer: "Yes, mockups are rendered at 2x retina pixel density so your typography and UI elements stay razor sharp on high-DPI displays."
+            }
+        ],
+        long_content: `
+<h2>Showcase Your Products with Professional Mockups</h2>
+<p>Stop sharing plain rectangular screenshots. Wrap your SaaS interfaces, mobile apps, and portfolio designs in gorgeous hardware frames with rich ambient shadows.</p>
+`
+    },
+    // ─────────────────────────────────────────────────────────────────────────
+    // 15. EXIF Data Viewer & Stripper
+    // ─────────────────────────────────────────────────────────────────────────
+    {
+        tool_slug: "exif-viewer-stripper",
+        page_title: "EXIF Data Viewer & Stripper – Inspect & Remove Photo Metadata Online",
+        page_intro: "View hidden camera model, lens, shutter speed, ISO, and GPS location coordinates stored in your photos. One-click strip all metadata to safeguard your personal privacy.",
+        meta_title: "EXIF Data Viewer & Stripper – Free Privacy Photo Metadata Cleaner",
+        meta_description: "Inspect and remove EXIF metadata online. View camera settings, aperture, timestamp, and GPS coordinates. Strip all personal metadata before sharing photos online.",
+        meta_keywords: [
+            "exif viewer",
+            "exif data remover",
+            "strip exif metadata",
+            "remove gps from photo",
+            "photo metadata cleaner",
+            "view camera settings online"
+        ],
+        canonical_url: "https://fusiontools.in/tools/image-tools/exif-viewer-stripper",
+        noindex: false,
+        schema_markup: null,
+        status: "active",
+        features: [
+            {
+                title: "Instant In-Browser Binary Parsing",
+                description: "Decodes EXIF, TIFF, and GPS metadata headers directly on your device."
+            },
+            {
+                title: "One-Click Privacy Stripping",
+                description: "Re-encodes pure pixel data to erase all location tags, device IDs, and timestamps."
+            },
+            {
+                title: "Batch Metadata Removal",
+                description: "Clean dozens of photos in seconds and download safe versions in a single ZIP."
+            }
+        ],
+        faqs: [
+            {
+                question: "Why should I remove EXIF data before posting photos?",
+                answer: "Photos taken on smartphones and modern cameras often contain exact GPS coordinates of your home or location, plus device serial numbers. Stripping EXIF prevents privacy leaks."
+            }
+        ],
+        long_content: `
+<h2>Protect Your Location and Identity Online</h2>
+<p>Every picture taken with a smartphone contains hidden metadata. Our tool reveals everything embedded in your images and lets you remove it in one click before publishing.</p>
+`
+    },
+    // ─────────────────────────────────────────────────────────────────────────
+    // 16. Online Meme Generator
+    // ─────────────────────────────────────────────────────────────────────────
+    {
+        tool_slug: "meme-generator",
+        page_title: "Free Online Meme Generator – Create Custom & Classic Memes Instantly",
+        page_intro: "Create hilarious memes in seconds using popular templates or your own pictures. Customize top and bottom text, font size, stroke outlines, and copy directly to your clipboard.",
+        meta_title: "Online Meme Generator – Fast, Free & Watermark-Free Meme Maker",
+        meta_description: "Create custom memes online for free. Classic templates, custom photo uploads, Impact font, text outline customization, and instant downloads with zero watermarks.",
+        meta_keywords: [
+            "meme generator",
+            "online meme maker",
+            "free meme generator no watermark",
+            "create meme from picture",
+            "custom text meme maker"
+        ],
+        canonical_url: "https://fusiontools.in/tools/image-tools/meme-generator",
+        noindex: false,
+        schema_markup: null,
+        status: "active",
+        features: [
+            {
+                title: "Iconic Meme Typography",
+                description: "Features bold Impact lettering with high-contrast text outlines for instant readability."
+            },
+            {
+                title: "Custom Photo Uploads",
+                description: "Turn any personal snapshot, screenshot, or graphic into a viral meme."
+            },
+            {
+                title: "Zero Watermarks",
+                description: "Get clean, watermark-free meme downloads ready for Reddit, Discord, and Instagram."
+            }
+        ],
+        faqs: [
+            {
+                question: "Does this meme generator add any branding or watermarks?",
+                answer: "No! FusionTools does not add any watermarks to your generated memes. You get 100% clean images."
+            }
+        ],
+        long_content: `
+<h2>Make Viral Memes in Seconds</h2>
+<p>Generate memes effortlessly with responsive text wrapping, custom outline colors, and one-click clipboard copying.</p>
+`
+    },
+    // ─────────────────────────────────────────────────────────────────────────
+    // 17. Bulk Image Watermark Adder
+    // ─────────────────────────────────────────────────────────────────────────
+    {
+        tool_slug: "bulk-watermark",
+        page_title: "Bulk Image Watermark Adder – Add Text & Logo Watermarks to Multiple Photos",
+        page_intro: "Protect your images and photographs from copyright theft. Stamp text or transparent logo watermarks across up to 25 photos at once with grid positioning and diagonal tile patterns.",
+        meta_title: "Bulk Image Watermark Adder – Free Batch Photo Watermarking Online",
+        meta_description: "Add watermarks to photos online in bulk. Support for custom text, logo images, 9-point grid alignment, diagonal tiling, and batch ZIP downloads. 100% browser-based.",
+        meta_keywords: [
+            "bulk watermark adder",
+            "watermark multiple images online",
+            "batch photo watermark",
+            "add logo watermark to photos",
+            "protect image copyright",
+            "free online watermark tool"
+        ],
+        canonical_url: "https://fusiontools.in/tools/image-tools/bulk-watermark",
+        noindex: false,
+        schema_markup: null,
+        status: "active",
+        features: [
+            {
+                title: "Text & Logo Modes",
+                description: "Type custom copyright notices or upload transparent PNG logos to brand your photos."
+            },
+            {
+                title: "Diagonal Repeating Tile",
+                description: "Protect entire images with diagonal tiled watermarks that cannot be easily cropped out."
+            },
+            {
+                title: "Batch ZIP Export",
+                description: "Process up to 25 photos simultaneously and download all branded photos in one ZIP."
+            }
+        ],
+        faqs: [
+            {
+                question: "Can I use my own logo as a watermark?",
+                answer: "Yes, you can upload any transparent PNG logo, adjust its scale relative to each image, and customize opacity."
+            }
+        ],
+        long_content: `
+<h2>Effortless Copyright Protection for Photographers & Creators</h2>
+<p>Whether you're watermarking a product catalog or protecting client photography galleries, our bulk watermarking tool handles batch processing smoothly in your browser.</p>
+`
     }
 ];
 //# sourceMappingURL=image-tools.data.js.map
