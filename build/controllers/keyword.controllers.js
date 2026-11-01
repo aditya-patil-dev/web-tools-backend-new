@@ -13,7 +13,7 @@ class KeywordController {
          */
         this.doKeywordResearch = async (req, res, next) => {
             try {
-                const { query, language = "en", region = "us", depth = 1, include_questions = true, export_csv = false, filters = {}, } = req.body;
+                const { query, language = "en", region = "us", depth = 1, include_questions = true, include_prepositions = true, include_alphabet = false, export_csv = false, filters = {}, } = req.body;
                 // ── Validations ──────────────────────────────────────────
                 if (!query || typeof query !== "string" || !query.trim()) {
                     throw new HttpException_1.default(400, "query is required");
@@ -33,8 +33,10 @@ class KeywordController {
                     language,
                     region,
                     depth,
-                    include_questions,
-                    export_csv,
+                    include_questions: Boolean(include_questions),
+                    include_prepositions: Boolean(include_prepositions),
+                    include_alphabet: Boolean(include_alphabet),
+                    export_csv: Boolean(export_csv),
                     filters,
                 });
                 res.status(200).json({

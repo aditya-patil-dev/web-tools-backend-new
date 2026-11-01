@@ -22,7 +22,7 @@ const PUBLIC_ROUTES = [
     { path: "/api/v1/contact", methods: ["POST"] },
     { path: "/api/v1/uploads", methods: ["GET"] },
     { path: "/api/v1/settings", methods: ["GET"] },
-    { path: "/api/v1/keyword", methods: ["GET"] },
+    { path: "/api/v1/keyword", methods: ["GET", "POST"] },
     // Legal Pages (ONLY PUBLIC GET, NOT ADMIN)
     { path: "/api/v1/legal-pages", methods: ["GET"] },
     // Public tool actions — called by unauthenticated visitors
