@@ -15,10 +15,13 @@ const crypto_1 = __importDefault(require("crypto"));
 const error_middleware_1 = __importDefault(require("./middlewares/error.middleware"));
 const logger_1 = require("./utils/logger");
 const auth_middleware_1 = __importDefault(require("./middlewares/auth.middleware"));
+const websocket_service_1 = __importDefault(require("./services/websocket.service"));
+const http_1 = __importDefault(require("http"));
 class App {
     constructor(routes) {
         var _a, _b;
         this.app = (0, express_1.default)();
+        this.server = http_1.default.createServer(this.app);
         this.port = Number((_a = process.env.PORT) !== null && _a !== void 0 ? _a : 8000);
         this.env = (_b = process.env.NODE_ENV) !== null && _b !== void 0 ? _b : "development";
         this.initializeCoreMiddlewares();
@@ -27,15 +30,19 @@ class App {
         this.initializeRoutes(routes);
         this.initializeSwagger();
         this.initializeErrorHandling();
+        this.initializeWebSocket();
+    }
+    initializeWebSocket() {
+        websocket_service_1.default.getInstance().init(this.server);
     }
     listen() {
-        const server = this.app.listen(this.port, "0.0.0.0", () => {
-            logger_1.logger.info(`🚀 App listening on 0.0.0.0:${this.port}. Environment: ${this.env}.`);
+        this.server.listen(this.port, "0.0.0.0", () => {
+            logger_1.logger.info(`🚀 App & WebSockets listening on 0.0.0.0:${this.port}. Environment: ${this.env}.`);
         });
         // Future-proof: graceful shutdown hooks (doesn't break if unused)
         const shutdown = (signal) => {
             logger_1.logger.info(`🛑 Received ${signal}. Shutting down...`);
-            server.close((err) => {
+            this.server.close((err) => {
                 if (err) {
                     logger_1.logger.error("Error while closing server", err);
                     process.exit(1);
@@ -48,6 +55,9 @@ class App {
     }
     getServer() {
         return this.app;
+    }
+    getHttpServer() {
+        return this.server;
     }
     // ----------------------------
     // Core middleware
@@ -158,6 +168,10 @@ class App {
                 env: this.env,
                 uptime: process.uptime(),
                 timestamp: new Date().toISOString(),
+                websocket: {
+                    ready: websocket_service_1.default.getInstance().isReady(),
+                    connections: websocket_service_1.default.getInstance().getConnectedSocketsCount(),
+                },
             });
         });
         // Optional: lightweight root for load balancers

@@ -1,3 +1,5 @@
+import WebSocketService from "./websocket.service";
+import { WebSocketEvents } from "../interfaces/websocket.interface";
 import DB, { T } from "../database/index.schema";
 import axios from "axios";
 import HttpException from "../exceptions/HttpException";
@@ -1060,6 +1062,12 @@ class ToolsService {
         ip_address: data.ip_address || null,
       })
       .returning("*");
+
+    // Real-time broadcast to connected admin dashboards
+    WebSocketService.getInstance().emitToAdmins(
+      WebSocketEvents.TOOL_FEEDBACK_CREATED,
+      feedback
+    );
 
     return feedback;
   }

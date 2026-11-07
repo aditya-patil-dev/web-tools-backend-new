@@ -47,6 +47,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const websocket_service_1 = __importDefault(require("./websocket.service"));
+const websocket_interface_1 = require("../interfaces/websocket.interface");
 const index_schema_1 = __importStar(require("../database/index.schema"));
 const axios_1 = __importDefault(require("axios"));
 const HttpException_1 = __importDefault(require("../exceptions/HttpException"));
@@ -803,6 +805,8 @@ class ToolsService {
             ip_address: data.ip_address || null,
         })
             .returning("*");
+        // Real-time broadcast to connected admin dashboards
+        websocket_service_1.default.getInstance().emitToAdmins(websocket_interface_1.WebSocketEvents.TOOL_FEEDBACK_CREATED, feedback);
         return feedback;
     }
 }

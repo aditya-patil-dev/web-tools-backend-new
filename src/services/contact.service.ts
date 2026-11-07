@@ -1,3 +1,5 @@
+import WebSocketService from "./websocket.service";
+import { WebSocketEvents } from "../interfaces/websocket.interface";
 import DB, { T } from "../database/index.schema";
 import HttpException from "../exceptions/HttpException";
 
@@ -30,6 +32,12 @@ class ContactService {
                 user_agent: meta.user_agent
             })
             .returning("*");
+
+        // Real-time notification to all connected admin dashboards
+        WebSocketService.getInstance().emitToAdmins(
+            WebSocketEvents.CONTACT_MESSAGE_RECEIVED,
+            created
+        );
 
         return created;
     }

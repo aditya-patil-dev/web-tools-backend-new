@@ -12,14 +12,18 @@ import Routes from "./interfaces/route.interface";
 import errorMiddleware from "./middlewares/error.middleware";
 import { logger, stream } from "./utils/logger";
 import authMiddleware from "./middlewares/auth.middleware";
+import WebSocketService from "./services/websocket.service";
+import http from "http";
 
 class App {
   public app: express.Application;
+  public server: http.Server;
   public port: number;
   public env: string;
 
   constructor(routes: Routes[]) {
     this.app = express();
+    this.server = http.createServer(this.app);
 
     this.port = Number(process.env.PORT ?? 8000);
     this.env = process.env.NODE_ENV ?? "development";
@@ -30,19 +34,24 @@ class App {
     this.initializeRoutes(routes);
     this.initializeSwagger();
     this.initializeErrorHandling();
+    this.initializeWebSocket();
+  }
+
+  private initializeWebSocket() {
+    WebSocketService.getInstance().init(this.server);
   }
 
   public listen() {
-    const server = this.app.listen(this.port, "0.0.0.0", () => {
+    this.server.listen(this.port, "0.0.0.0", () => {
       logger.info(
-        `🚀 App listening on 0.0.0.0:${this.port}. Environment: ${this.env}.`
+        `🚀 App & WebSockets listening on 0.0.0.0:${this.port}. Environment: ${this.env}.`
       );
     });
 
     // Future-proof: graceful shutdown hooks (doesn't break if unused)
     const shutdown = (signal: string) => {
       logger.info(`🛑 Received ${signal}. Shutting down...`);
-      server.close((err) => {
+      this.server.close((err) => {
         if (err) {
           logger.error("Error while closing server", err);
           process.exit(1);
@@ -57,6 +66,10 @@ class App {
 
   public getServer() {
     return this.app;
+  }
+
+  public getHttpServer() {
+    return this.server;
   }
 
   // ----------------------------
@@ -183,6 +196,10 @@ class App {
         env: this.env,
         uptime: process.uptime(),
         timestamp: new Date().toISOString(),
+        websocket: {
+          ready: WebSocketService.getInstance().isReady(),
+          connections: WebSocketService.getInstance().getConnectedSocketsCount(),
+        },
       });
     });
 
