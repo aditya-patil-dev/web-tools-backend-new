@@ -10,7 +10,7 @@ const validateEnv = () => {
     JWT_REFRESH_SECRET: str({ default: "default-refresh-secret-change-in-prod" }),
 
     // Keep these optional in env (you already have them, but defaults are safe)
-    JWT_ACCESS_EXPIRES_IN: str({ default: "15m" }),
+    JWT_ACCESS_EXPIRES_IN: str({ default: "7d" }),
     JWT_REFRESH_EXPIRES_IN: str({ default: "30d" }),
   });
 };

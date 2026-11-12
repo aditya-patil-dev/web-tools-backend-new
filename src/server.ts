@@ -17,6 +17,7 @@ import UploadRoute from "./routes/upload.routes";
 import ToolsRoute from "./routes/tools.routes";
 import AdminToolsRoute from "./routes/admin-tools.routes";
 import AdminToolPagesRoute from "./routes/admin-tool-pages.routes";
+import AdminAnalyticsRoute from "./routes/admin-analytics.routes";
 import SeoRoute from "./routes/seo.routes";
 import SeoRobotsRoute from "./routes/seo-robots.routes";
 import PageComponentsRoute from "./routes/page-components.routes";
@@ -42,6 +43,7 @@ const routes = [
     new ToolsRoute(),
     new AdminToolsRoute(),
     new AdminToolPagesRoute(),
+    new AdminAnalyticsRoute(),
     new SeoRoute(),
     new SeoRobotsRoute(),
     new PageComponentsRoute(),

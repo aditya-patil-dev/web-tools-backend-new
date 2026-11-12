@@ -57,6 +57,9 @@ class ToolsRoute implements Route {
       this.ToolsController.submitFeedback,
     );
 
+    // ── Telemetry & Event Tracking ─────────────────────────────────────
+    this.router.post("/events/track", this.ToolsController.trackToolEvent);
+
     // ── Utility tools ──────────────────────────────────────────────────
     this.router.post("/speed-test", this.ToolsController.testWebsiteSpeed);
     this.router.post("/og-check", this.ToolsController.checkOpenGraph);

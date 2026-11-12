@@ -17,6 +17,7 @@ export enum WebSocketEvents {
 
   // Tool Events
   TOOL_FEEDBACK_CREATED = "tool:feedback_created",
+  TOOL_EVENT_CREATED = "tool:event_created",
   TOOL_CREATED = "tool:created",
   TOOL_UPDATED = "tool:updated",
   TOOL_DELETED = "tool:deleted",

@@ -19,6 +19,7 @@ const upload_routes_1 = __importDefault(require("./routes/upload.routes"));
 const tools_routes_1 = __importDefault(require("./routes/tools.routes"));
 const admin_tools_routes_1 = __importDefault(require("./routes/admin-tools.routes"));
 const admin_tool_pages_routes_1 = __importDefault(require("./routes/admin-tool-pages.routes"));
+const admin_analytics_routes_1 = __importDefault(require("./routes/admin-analytics.routes"));
 const seo_routes_1 = __importDefault(require("./routes/seo.routes"));
 const seo_robots_routes_1 = __importDefault(require("./routes/seo-robots.routes"));
 const page_components_routes_1 = __importDefault(require("./routes/page-components.routes"));
@@ -42,6 +43,7 @@ const routes = [
     new tools_routes_1.default(),
     new admin_tools_routes_1.default(),
     new admin_tool_pages_routes_1.default(),
+    new admin_analytics_routes_1.default(),
     new seo_routes_1.default(),
     new seo_robots_routes_1.default(),
     new page_components_routes_1.default(),

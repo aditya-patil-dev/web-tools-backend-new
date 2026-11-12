@@ -274,6 +274,56 @@ class ToolsController {
       next(error);
     }
   };
+
+  /**
+   * POST /tools/events/track
+   */
+  public trackToolEvent = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const {
+        tool_slug,
+        tool_id,
+        event_type,
+        session_id,
+        ref_tool_slug,
+        ref_tool_id,
+        meta,
+      } = req.body;
+
+      if (!event_type || !session_id) {
+        res.status(400).json({
+          success: false,
+          message: "event_type and session_id are required",
+        });
+        return;
+      }
+
+      const AdminAnalyticsService = (await import("../services/admin-analytics.services")).default;
+      const analyticsService = new AdminAnalyticsService();
+
+      const event = await analyticsService.trackEvent({
+        tool_slug,
+        tool_id,
+        event_type,
+        session_id,
+        ref_tool_slug,
+        ref_tool_id,
+        meta,
+      });
+
+      res.status(201).json({
+        success: true,
+        message: "Event tracked successfully",
+        data: event,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default ToolsController;

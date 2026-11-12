@@ -52,6 +52,8 @@ class ToolsRoute {
         this.router.get(`/:category/:slug`, this.ToolsController.getToolPage);
         // ── Feedback ───────────────────────────────────────────────────────
         this.router.post("/feedback", (0, validation_middleware_1.default)(tool_feedback_dto_1.CreateToolFeedbackDto, "body"), this.ToolsController.submitFeedback);
+        // ── Telemetry & Event Tracking ─────────────────────────────────────
+        this.router.post("/events/track", this.ToolsController.trackToolEvent);
         // ── Utility tools ──────────────────────────────────────────────────
         this.router.post("/speed-test", this.ToolsController.testWebsiteSpeed);
         this.router.post("/og-check", this.ToolsController.checkOpenGraph);

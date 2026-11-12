@@ -18,6 +18,7 @@ var WebSocketEvents;
     WebSocketEvents["NOTIFICATION_READ"] = "notification:read";
     // Tool Events
     WebSocketEvents["TOOL_FEEDBACK_CREATED"] = "tool:feedback_created";
+    WebSocketEvents["TOOL_EVENT_CREATED"] = "tool:event_created";
     WebSocketEvents["TOOL_CREATED"] = "tool:created";
     WebSocketEvents["TOOL_UPDATED"] = "tool:updated";
     WebSocketEvents["TOOL_DELETED"] = "tool:deleted";
